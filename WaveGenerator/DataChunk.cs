@@ -5,10 +5,11 @@ using System.IO;
 
 namespace WaveGenerator
 {
-    class DataChunk:Chunk
+    class DataChunk : Chunk
     {
-        List<short[]> _samples = new List<short[]>();
-        long _allSamplesCount = 0;     
+        List<byte[]> _samplesBytes = new List<byte[]>();
+
+       // long _allSamplesCount = 0;
 
         public DataChunk()
             : base("data", 0)
@@ -16,37 +17,35 @@ namespace WaveGenerator
 
         }
 
-        public void AddSamples(short[] samples)
+        //public void AddSamples(short[] samples)
+        //{
+        //    this._samples.Add(samples);
+        //    _allSamplesCount += samples.Length;
+        //}
+
+        public void AddSamples(byte[] sample)
         {
-            this._samples.Add(samples);
-            _allSamplesCount += samples.Length;
+            _samplesBytes.Add(sample);
+            this.byteCount += sample.Length;
         }
 
         public override byte[] GetChunkBytes()
-        {     
-            byte[] sampleBytes = new byte[_allSamplesCount * 2];           
+        {
             int pos = 0;
-            foreach (short[] shortSamples in _samples)
-            {
-                foreach (short s in shortSamples)
-                {
-                    byte[] byteSample = BitConverter.GetBytes(s);
-                    byteSample.CopyTo(sampleBytes, pos);
-                    pos += byteSample.Length;
-                }               
-            }          
-            byteCount += sampleBytes.Length;
-            //Get size of data chunk
-            this._chunkDataSize = BitConverter.GetBytes((uint)sampleBytes.Length);
-            pos = 0;
-            byte[] result = new byte[byteCount];
+            byte[] result = new byte[this.byteCount];
             
             this._chunkID.CopyTo(result, pos);
             pos += this._chunkID.Length;
-            this._chunkDataSize.CopyTo(result, pos);
-            pos += this._chunkDataSize.Length;
-            sampleBytes.CopyTo(result, pos);
             
+            this._chunkDataSize = BitConverter.GetBytes((uint)(_samplesBytes.Count * _samplesBytes[0].Length));           
+            this._chunkDataSize.CopyTo(result, pos);            
+            pos += this._chunkDataSize.Length;
+            
+            foreach (byte[] sb in _samplesBytes)
+            {
+                sb.CopyTo(result, pos);
+                pos += sb.Length;
+            }
             return result;
         }
     }

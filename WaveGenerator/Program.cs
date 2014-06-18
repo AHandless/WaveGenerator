@@ -8,7 +8,7 @@ namespace WaveGenerator
     {
         static void Main()
         {
-            SoundGenerator sg = new SoundGenerator(44100, 16, 1);
+            SoundGenerator sg = new SoundGenerator(2000, 16, 1);
             sg.AddTone(400, 1000);
             sg.AddTone(500, 1000);
             sg.AddTone(600, 1000);
