@@ -23,7 +23,7 @@ namespace WaveGenerator
         }
 
         public override byte[] GetChunkBytes()
-        {          
+        {     
             byte[] sampleBytes = new byte[_allSamplesCount * 2];           
             int pos = 0;
             foreach (short[] shortSamples in _samples)
