@@ -31,7 +31,7 @@ namespace WaveGenerator
             short[] samples = new short[sampleCount*_channels];
             // The "angle" used in the function, adjusted for the number of channels and sample rate.
             // This value is like the period of the wave.
-            double t = Math.PI * 2 * frequency / _sampleRate;          
+            double t = Math.PI * 2 * frequency / _sampleRate/_channels;          
             for (uint i = 0; i < samples.Length; i++)
             {
                 for (int channel = 0; channel < _channels; channel++)

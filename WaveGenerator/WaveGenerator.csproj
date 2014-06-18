@@ -45,6 +45,7 @@
     <Compile Include="DataChunk.cs" />
     <Compile Include="FormatChunk.cs" />
     <Compile Include="HeaderChunk.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SoundGenerator.cs" />
   </ItemGroup>
