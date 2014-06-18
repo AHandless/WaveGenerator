@@ -38,9 +38,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chunk.cs" />
     <Compile Include="DataChunk.cs" />
     <Compile Include="FormatChunk.cs" />
-    <Compile Include="WaveHeaderChunk.cs" />
+    <Compile Include="HeaderChunk.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
