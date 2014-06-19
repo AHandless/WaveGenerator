@@ -43,9 +43,20 @@ namespace WaveGenerator
 
         public byte[] ConvertNumber(double number, byte bit)
         {
+
             byte[] fullNumber = BitConverter.GetBytes(Convert.ToInt64(number));
 
-            byte[] result = new byte[bit / 8];
+            byte[] result = new byte[bit / 8]; 
+            //It bit depth is 8
+            if (bit == 8)
+            {
+                sbyte signed = Convert.ToSByte(number);
+                byte unsigned = 0;                
+                unsigned = (byte)(127+signed);                
+                unsigned = (byte)(127+signed);
+                result[0] = unsigned;
+                return result;
+            } 
             for (int i = 0; i < bit / 8; i++)
             {
                 result[i] = fullNumber[i];
