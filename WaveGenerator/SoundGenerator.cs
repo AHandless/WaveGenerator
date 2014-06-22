@@ -7,8 +7,8 @@ namespace WaveGenerator
 {
     public class SoundGenerator
     {
-        private long _sampleCount = 0;
-        private DataChunk data;
+        private long _generatedSampleCount = 0;
+        private DataChunk data = new DataChunk();
         private HeaderChunk header;
         private FormatChunk format;
 
@@ -16,12 +16,8 @@ namespace WaveGenerator
         private ushort _bitPerSample;
         private ushort _channels;
 
-       private long lastDataChunkPosition = 0;
-  
-       private long overallDataSize = 0;
-       Stream _file;
-
-        bool first = true;
+        private long lastDataChunkPosition = 0;
+        Stream _file;     
 
         public SoundGenerator(uint sampleRate, ushort bitPerSample, ushort channels, Stream file)
         {
@@ -30,88 +26,70 @@ namespace WaveGenerator
             this._channels = channels;
             this._file = file;
         }
-        
+
         public double phase = 0;
         public void AddTone(double frequency, long duration)
-        {
-            DataChunk uncomplete = new DataChunk();
-            long sampleCount = duration * _sampleRate / 1000;         
-            _sampleCount += sampleCount;
-            double amplitude = Math.Pow(2, _bitPerSample) / 2 - 1;          
-            double radPerSample = 2*Math.PI /_sampleRate;
-            //fading
-         
-            if (first)
-            {              
-                for (uint i = 0; i <= sampleCount; i++)
-                {    
-                    
-                   
-                    double sin = amplitude * Math.Sin(phase);                  
+        {           
+            long sampleCount = duration * _sampleRate / 1000;
+            _generatedSampleCount += sampleCount;
+            double amplitude = Math.Pow(2, _bitPerSample) / 2 - 1;
+            double radPerSample = 2 * Math.PI / _sampleRate;
+            if (_file != null)
+            {
+                DataChunk uncompleted = new DataChunk();
+                for (uint i = 0; i < sampleCount; i++)
+                {
+                    double sin = amplitude * Math.Sin(phase);
                     phase += frequency * radPerSample;
                     byte[] sinBytes = ConvertNumber(sin, (byte)_bitPerSample);
                     for (int channel = 0; channel < _channels; channel++)
-                    {
-                        //data.AddSamples(sinBytes);
-                        uncomplete.AddSamples(sinBytes);
+                    {                       
+                       uncompleted.AddSamples(sinBytes);
                     }
                 }
-               first = false;
+                //Сбрасывание промежуточных результатов
+                _file.Position = 0;
+                SaveHeadersToFile(_file);
+                byte[] uncompleteDataBytes = uncompleted.GetSampleBytes();
+                uncompleted.ChangeSize(BitConverter.GetBytes((uint)(_bitPerSample / 8 * (_generatedSampleCount*_channels))));
+                byte[] uncompletedDataHeaderBytes = uncompleted.GetHeaderBytes();
+                _file.Write(uncompletedDataHeaderBytes, 0, uncompletedDataHeaderBytes.Length);
+                long headersEnd = _file.Position;
+                _file.Position += lastDataChunkPosition;
+                _file.Write(uncompleteDataBytes, 0, uncompleteDataBytes.Length);
+                lastDataChunkPosition = _file.Position - headersEnd;
+                _file.Flush();
             }
             else
             {
-                for (uint i = 0; i <  sampleCount; i++)
-                {                    
-                    
-                    double sin = amplitude * Math.Sin(phase);                 
+                for (uint i = 0; i < sampleCount; i++)
+                {
+                    double sin = amplitude * Math.Sin(phase);
                     phase += frequency * radPerSample;
                     byte[] sinBytes = ConvertNumber(sin, (byte)_bitPerSample);
                     for (int channel = 0; channel < _channels; channel++)
                     {
-                       // data.AddSamples(sinBytes);
-                        uncomplete.AddSamples(sinBytes);
+                        data.AddSamples(sinBytes);                        
                     }
                 }
-            }
-            //Сбрасывание промежуточных результатов  
-           
-            _file.Position = 0;
-            SaveHeadersToFile(_file);
-          //_file.Flush();
-            overallDataSize += uncomplete.CurrentSize;
-            byte[] uncompleteDataBytes = uncomplete.GetSampleBytes();
-            uncomplete.ChangeSize(BitConverter.GetBytes((uint)overallDataSize));
-            byte[] uncompletedDataHeaderBytes = uncomplete.GetHeaderBytes();
-            
-            _file.Write(uncompletedDataHeaderBytes, 0, uncompletedDataHeaderBytes.Length);
-
-            long headesEnd = _file.Position;
-            _file.Position+=lastDataChunkPosition;
-            _file.Write(uncompleteDataBytes, 0, uncompleteDataBytes.Length);
-            lastDataChunkPosition = _file.Position-headesEnd;
-           _file.Flush();
-        }
-
-        public static double fade(double compressor, double frequency, double position, double length, int sampleRate)
-        {
-            return Math.Exp(((compressor / sampleRate) * frequency * sampleRate * (position / sampleRate)) / (length / sampleRate));
+            }           
         }
 
         public byte[] ConvertNumber(double number, byte bit)
         {
             byte[] fullNumber = BitConverter.GetBytes(Convert.ToInt64(number));
 
-            byte[] result = new byte[bit / 8]; 
+            byte[] result = new byte[bit / 8];
             //It bit depth is 8
             if (bit == 8)
             {
                 sbyte signed = Convert.ToSByte(number);
-                byte unsigned = 0;                
-                unsigned = (byte)(127+signed);                
-                unsigned = (byte)(127+signed);
+                byte unsigned = 0;
+                unsigned = (byte)(127 + signed);
+                unsigned = (byte)(127 + signed);
                 result[0] = unsigned;
                 return result;
-            } 
+            }
             for (int i = 0; i < bit / 8; i++)
             {
                 result[i] = fullNumber[i];
@@ -121,30 +99,27 @@ namespace WaveGenerator
 
         public void SaveTo(Stream stream)
         {
-            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample/8) * _channels * _sampleCount + 0));
+            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample / 8) * _channels * _generatedSampleCount + 0));
             header = new HeaderChunk(fileSize);
             format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-
             byte[] headerbytes = header.GetChunkBytes();
             byte[] formatBytes = format.GetChunkBytes();
             byte[] dataBytes = data.GetChunkBytes();
             stream.Write(headerbytes, 0, headerbytes.Length);
             stream.Write(formatBytes, 0, formatBytes.Length);
-            stream.Write(dataBytes, 0, dataBytes.Length);          
+            stream.Write(dataBytes, 0, dataBytes.Length);
         }
-
 
         public void SaveHeadersToFile(Stream file)
         {
             file.Position = 0;
-            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample / 8) * _channels * _sampleCount + 0));
+            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample / 8) * _channels * _generatedSampleCount + 0));
             header = new HeaderChunk(fileSize);
             format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
             byte[] headerbytes = header.GetChunkBytes();
             byte[] formatBytes = format.GetChunkBytes();
-           file.Write(headerbytes, 0, headerbytes.Length);
-           file.Write(formatBytes, 0, formatBytes.Length);
-          
+            file.Write(headerbytes, 0, headerbytes.Length);
+            file.Write(formatBytes, 0, formatBytes.Length);
         }
     }
 }
