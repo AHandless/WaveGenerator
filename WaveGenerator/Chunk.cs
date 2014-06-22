@@ -27,6 +27,11 @@ namespace WaveGenerator
             byteCount += this._chunkDataSize.Length;
         }
 
+        public void ChangeSize(byte[] newSize)
+        {
+            _chunkDataSize = newSize;
+        }
+
         abstract public byte[] GetChunkBytes();
         
     }

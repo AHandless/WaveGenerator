@@ -9,6 +9,11 @@ namespace WaveGenerator
     {
         List<byte[]> _samplesBytes = new List<byte[]>();
 
+        public long CurrentSize
+        {
+            get { return _samplesBytes.Count * _samplesBytes[0].Length; }
+        }
+
        // long _allSamplesCount = 0;
 
         public DataChunk()
@@ -48,5 +53,29 @@ namespace WaveGenerator
             }
             return result;
         }
+
+        public byte[] GetSampleBytes()
+        {
+            byte[] data = new byte[_samplesBytes.Count * _samplesBytes[0].Length];
+            int pos = 0;
+            foreach (byte[] sb in _samplesBytes)
+            {
+                sb.CopyTo(data, pos);
+                pos += sb.Length;
+            }
+            return data;
+        }
+
+        public byte[] GetHeaderBytes()
+        {
+            byte[] result = new byte[8];
+            int pos = 0;
+            this._chunkID.CopyTo(result, pos);
+            pos += this._chunkID.Length;
+           // this._chunkDataSize = BitConverter.GetBytes((uint)(_samplesBytes.Count * _samplesBytes[0].Length));
+            this._chunkDataSize.CopyTo(result, pos);
+            return result;
+        }
+
     }
 }
