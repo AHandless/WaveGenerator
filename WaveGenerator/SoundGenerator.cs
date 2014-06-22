@@ -32,6 +32,7 @@ namespace WaveGenerator
         {           
             long sampleCount = duration * _sampleRate / 1000;
             _generatedSampleCount += sampleCount;
+
             double amplitude = Math.Pow(2, _bitPerSample) / 2 - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
             if (_file != null)
@@ -58,6 +59,11 @@ namespace WaveGenerator
                 _file.Position += lastDataChunkPosition;
                 _file.Write(uncompleteDataBytes, 0, uncompleteDataBytes.Length);
                 lastDataChunkPosition = _file.Position - headersEnd;
+                //padByte
+                if ((_generatedSampleCount*_channels*(_bitPerSample/8)) % 2 != 0)
+                {
+                    _file.Write(new byte[] { 0 }, 0, 1);
+                }
                 _file.Flush();
             }
             else
@@ -98,10 +104,16 @@ namespace WaveGenerator
         }
 
         public void SaveTo(Stream stream)
-        {
-            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample / 8) * _channels * _generatedSampleCount + 0));
-            header = new HeaderChunk(fileSize);
+        {          
+            header = new HeaderChunk(0);
             format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
+            uint fileSize = (uint)(header.Size + format.Size + data.Size);
+            //Check if there's the pad byte
+            if ((_generatedSampleCount * _channels * (_bitPerSample / 8)) % 2 != 0)
+            {
+                fileSize += 1;
+            }
+            header.ChangeSize(BitConverter.GetBytes(fileSize));
             byte[] headerbytes = header.GetChunkBytes();
             byte[] formatBytes = format.GetChunkBytes();
             byte[] dataBytes = data.GetChunkBytes();
@@ -110,12 +122,18 @@ namespace WaveGenerator
             stream.Write(dataBytes, 0, dataBytes.Length);
         }
 
-        public void SaveHeadersToFile(Stream file)
+        private void SaveHeadersToFile(Stream file)
         {
-            file.Position = 0;
-            uint fileSize = (uint)(4 + 24 + (8 + (_bitPerSample / 8) * _channels * _generatedSampleCount + 0));
-            header = new HeaderChunk(fileSize);
+            file.Position = 0;           
+            header = new HeaderChunk(0);
             format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
+            uint fileSize = (uint)(header.Size + format.Size + 8+_channels*(_bitPerSample/8)*_generatedSampleCount);
+            //Check if there's the pad byte
+            if ((_generatedSampleCount * _channels * (_bitPerSample / 8)) % 2 != 0)
+            {
+                fileSize += 1;
+            }
+            header.ChangeSize(BitConverter.GetBytes(fileSize));
             byte[] headerbytes = header.GetChunkBytes();
             byte[] formatBytes = format.GetChunkBytes();
             file.Write(headerbytes, 0, headerbytes.Length);

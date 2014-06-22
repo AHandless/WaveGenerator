@@ -5,23 +5,25 @@ using System.Text;
 namespace WaveGenerator
 {
     class FormatChunk:Chunk
-    {       
-        //ushort _compressionCode = 1;       
-        //ushort _numberOfChannels;       
-        //uint _sampleRate;    
-        //uint _averageBytesPerSecond;
-        //ushort _blockAlign;        
-        //ushort _signigicantBitsPerSample;       
-        //ushort _extraFormatBytes = 0;
-
+    {
         byte[] _compressionCode;
         byte[] _numberOfChannels;
         byte[] _sampleRate;
         byte[] _averageBytesPerSecond;
         byte[] _blockAlign;
         byte[] _signigicantBitsPerSample;
-        byte[] _extraFormatBytes;        
-       
+        byte[] _extraFormatBytes;
+
+        public override uint Size
+        {
+            get
+            {
+                uint size = BitConverter.ToUInt32(this._chunkDataSize, 0)+(uint)this._chunkID.Length+(uint)this._chunkDataSize.Length;
+                if (_extraFormatBytes != null)
+                    size += (uint)_extraFormatBytes.Length;
+                return size;
+            }           
+        }
 
         public FormatChunk(uint sampleRate, ushort channels, ushort bitsPerSample):base("fmt ", 16)
         {

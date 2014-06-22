@@ -8,6 +8,14 @@ namespace WaveGenerator
     {   
         byte[] RIFFType = Encoding.ASCII.GetBytes("WAVE");
 
+        public override uint Size
+        {
+            get
+            {
+                return (uint)RIFFType.Length;
+            }          
+        }
+
         public HeaderChunk(uint size)
             : base("RIFF", size)
         {
@@ -15,8 +23,7 @@ namespace WaveGenerator
 
         public override byte[] GetChunkBytes()
         {
-            byte[] result = new byte[this._chunkID.Length + this._chunkDataSize.Length+this.RIFFType.Length];
-            result = Chunk.JoinByteArrays(this._chunkID,
+            byte[] result = Chunk.JoinByteArrays(this._chunkID,
                                           this._chunkDataSize,
                                           this.RIFFType);            
             return result;

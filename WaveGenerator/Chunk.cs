@@ -3,22 +3,25 @@ using System.Collections.Generic;
 using System.Text;
 
 namespace WaveGenerator
-{
+{    
     abstract class Chunk
     {
         protected byte[] _chunkID;
-        protected byte[] _chunkDataSize;   
+        protected byte[] _chunkDataSize;
+        public abstract uint Size { get; }
 
         protected Chunk(string chunkID, uint chunkDataSize)
         {
             if (chunkID == null)
-                throw new ArgumentNullException("chunkID", "Can't create a chunk withoud an ID");
+                throw new ArgumentNullException("chunkID", "Can't create a chunk without an ID");
             this._chunkID = Encoding.ASCII.GetBytes(chunkID);
             this._chunkDataSize = BitConverter.GetBytes(chunkDataSize);         
         }
 
         public void ChangeSize(byte[] newSize)
         {
+            if (newSize == null)
+                _chunkDataSize = BitConverter.GetBytes((uint)0);
             _chunkDataSize = newSize;
         }
 
