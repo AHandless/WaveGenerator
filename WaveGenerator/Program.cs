@@ -10,18 +10,19 @@ namespace WaveGenerator
         static void Main()
         {
             FileStream file = new FileStream("generated.wav", FileMode.Create);
-            SoundGenerator sg = new SoundGenerator(7000, 8, 2, null);
+            SoundGenerator sg = new SoundGenerator(8000, 16, 1, file);
             Random r = new Random();
-            sg.AddTone(400, 1000);
+            sg.AddTone(440, 1000);
             sg.AddTone(1000, 1000);
-            //sg.AddTone(400, 433);
+            ////  sg.AddTone(1000, 1000);
+            //  //sg.AddTone(400, 433);
 
             for (int i = 0; i < 573; i++)
             {
                 int t = r.Next(350, 450);
                 sg.AddTone(t, 73);
             }
-            sg.SaveTo(file);
+            //  sg.SaveTo(file);
             file.Close();
         }
     }
