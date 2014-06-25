@@ -27,9 +27,84 @@ namespace WaveGenerator
             this._file = file;
         }
 
-       // public double phase = 0;
+        // public double phase = 0;
         double lastSin = 0d;
         bool directionUp = true;
+
+
+
+        public double[] AddComplexTone(bool fade, double duration, double[] startPhases, params double[] frequencies)
+        {           
+            long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
+            _generatedSampleCount += sampleCount;
+            double amplitude = Math.Pow(2, _bitPerSample - 1) - 1;
+            double radPerSample = 2 * Math.PI / _sampleRate;
+            double[] combined = new double[sampleCount];
+            for (uint i = 0; i < sampleCount; i++)
+            {
+                double sin = 0;
+                for (int f = 0; f < frequencies.Length; f++)
+                {
+                    sin += Math.Sin(frequencies[f] * i * radPerSample + startPhases[f]);
+                }
+                sin = sin / frequencies.Length * amplitude*(fade?1-(0.8/sampleCount)*(Math.Abs(-sampleCount+i*2)):1);
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
+                for (int channel = 0; channel < _channels; channel++)
+                {
+                    _data.AddSamples(sinBytes);
+                }
+                   
+            }           
+            double[] lastPhases = new double[frequencies.Length];
+            double sint = 0;
+            double cost = 0;
+            for (int f = 0; f < frequencies.Length; f++)
+            {
+                lastPhases[f] = Math.Sin(frequencies[f] * sampleCount * radPerSample + startPhases[f]);
+                cost = Math.Cos(frequencies[f] * sampleCount * radPerSample + startPhases[f]);
+                if (cost > 0 || sint == -1)
+                    lastPhases[f] = Math.Asin(lastPhases[f]);
+                else
+                    lastPhases[f] = -Math.Asin(lastPhases[f]) + Math.PI;
+            }
+            return lastPhases;           
+        }
+
+        private double Max(double[] values)
+        {
+            double result = Math.Abs(values[0]);
+            foreach (double value in values)
+                if (Math.Abs(value) > result)
+                    result = Math.Abs(value);
+            return result;                
+        }
+
+        public double AddSimpleTone(double frequency, double duration, double startPhase)
+        {
+            double lastPhase = 0;
+            long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
+            _generatedSampleCount += sampleCount;
+            double amplitude = Math.Pow(2, _bitPerSample - 1) - 1;
+            double radPerSample = 2 * Math.PI / _sampleRate;
+            for (uint i = 0; i < sampleCount; i++)
+            {
+                double sin = amplitude * Math.Sin(frequency * i * radPerSample + startPhase);
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
+                for (int channel = 0; channel < _channels; channel++)
+                {
+                    _data.AddSamples(sinBytes);
+                }
+            }
+            double g = Math.Asin(2);
+            lastPhase = (sampleCount % this._sampleRate) * radPerSample * frequency + startPhase;
+            double sint = Math.Sin(lastPhase);
+            double cost = Math.Cos(lastPhase);
+            if (cost > 0 || sint == -1)
+                lastPhase = Math.Asin(sint);
+            else
+                lastPhase = -Math.Asin(sint) + Math.PI;
+            return lastPhase;
+        }
 
         public void AddTone(double frequency, double duration)
         {
@@ -39,18 +114,18 @@ namespace WaveGenerator
             double amplitude = Math.Pow(2, _bitPerSample - 1) - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
             double shift = this.lastSin;
-            if (this.directionUp)           
-                shift = Math.Asin(shift);           
-            else         
+            if (this.directionUp)
+                shift = Math.Asin(shift);
+            else
                 shift = -Math.Asin(shift) + Math.PI;
             if (_file != null)
             {
-                DataChunk uncompleted = new DataChunk();              
+                DataChunk uncompleted = new DataChunk();
                 for (uint i = 0; i < sampleCount; i++)
                 {
                     double sin = Math.Sin(i * radPerSample * frequency + shift);
-                    sin = Math.Floor(sin * amplitude);
-                    byte[] sinBytes = ConvertNumber(sin, (byte)_bitPerSample);
+                    sin = sin * amplitude;
+                    byte[] sinBytes = ConvertNumber((int)sin, (byte)_bitPerSample);
                     for (int channel = 0; channel < _channels; channel++)
                     {
                         uncompleted.AddSamples(sinBytes);
@@ -79,8 +154,8 @@ namespace WaveGenerator
                 for (uint i = 0; i < sampleCount; i++)
                 {
                     double sin = Math.Sin(i * radPerSample * frequency + shift);
-                    sin = Math.Floor(sin * amplitude);
-                    byte[] sinBytes = ConvertNumber(sin, (byte)_bitPerSample);
+                    sin = sin * amplitude;
+                    byte[] sinBytes = ConvertNumber((int)sin, (byte)_bitPerSample);
                     for (int channel = 0; channel < _channels; channel++)
                     {
                         _data.AddSamples(sinBytes);
@@ -153,9 +228,9 @@ namespace WaveGenerator
         //    }
         //}
 
-        public byte[] ConvertNumber(double number, byte bit)
+        public byte[] ConvertNumber(long number, byte bit)
         {
-            byte[] fullNumber = BitConverter.GetBytes(Convert.ToInt64(number));
+            byte[] fullNumber = BitConverter.GetBytes(number);
 
             byte[] result = new byte[bit / 8];
             //It bit depth is 8
