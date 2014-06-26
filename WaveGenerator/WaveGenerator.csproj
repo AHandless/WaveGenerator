@@ -41,7 +41,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Wave.cs" />
     <Compile Include="Chunk.cs" />
     <Compile Include="DataChunk.cs" />
     <Compile Include="FormatChunk.cs" />

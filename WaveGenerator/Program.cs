@@ -12,7 +12,7 @@ namespace WaveGenerator
             FileStream file = new FileStream("AS.wav", FileMode.Create);
             StreamWriter log = new StreamWriter("log.txt");
             StreamWriter log2 = new StreamWriter("log2x.txt");
-            SoundGenerator sg = new SoundGenerator(16000, 24, 1, null);
+            SoundGenerator sg = new SoundGenerator(22050, 24, 1, null);
          //   Wave w = new Wave();
           //  w.addWave(400, 753);
          
@@ -34,14 +34,12 @@ namespace WaveGenerator
 
            Random r = new Random();
           double ppp = 0;        
-          for (int i = 0; i < 600; i++)
+          for (int i = 0; i < 100; i++)
           {
               int f1 = r.Next(440, 560);
               int f2 = r.Next(560, 620);
               int f3 = r.Next(620, 740);
-              ppp = sg.AddSimpleTone(f1, r.Next(70, 120), ppp);
-          
-
+              ppp = sg.AddSimpleTone(f1, r.Next(400,500), ppp);
           }
        //  sg.AddToneExperimental(1000, ppp, 957, 957, 957);
             sg.SaveTo(file);
