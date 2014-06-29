@@ -33,14 +33,28 @@ namespace WaveGenerator
         //  sg.AddToneExperimental(753, sg.AddToneExperimental(753, 0, 440), 440);
 
            Random r = new Random();
-          double ppp = 0;        
-          for (int i = 0; i < 100; i++)
-          {
-              int f1 = r.Next(440, 560);
-              int f2 = r.Next(560, 620);
-              int f3 = r.Next(620, 740);
-              ppp = sg.AddSimpleTone(f1, r.Next(400,500), ppp);
-          }
+          double ppp = 0;
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 1, 0.1, false);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 0.1, 1, 1, true);
+          //ppp = sg.AddSimpleTone(400, 453, ppp, 1, 0.1, 0.1, true);
+        //  sg.AddSimpleTone(300, 500, ppp, false, 2);
+          //for (int i = 0; i < 1; i++)
+          //{
+          //    int f1 = r.Next(440, 560);
+          //    int f2 = r.Next(560, 620);
+          //    int f3 = r.Next(620, 740);
+          //    ppp = sg.AddSimpleTone(400, 753, ppp, false);
+          //}
        //  sg.AddToneExperimental(1000, ppp, 957, 957, 957);
             sg.SaveTo(file);
             //log.Close();
