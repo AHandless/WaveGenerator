@@ -32,6 +32,8 @@ namespace WaveGenerator
 
         public double AddSimpleTone(double frequency, double duration, double startPhase, double startJointAmp, double endJointAmp, double aM)
         {
+            if (duration == 0)
+                return 0;
             double lastPhase = 0;
             long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
             this._generatedSampleCount += sampleCount;
@@ -85,6 +87,8 @@ namespace WaveGenerator
 
         public double[] AddComplexTone(double duration, double[] startPhases, double startJointAmp, double endJointAmp, double aM, params double[] frequencies)
         {
+            if (duration == 0)
+                return startPhases;
             long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
             this._generatedSampleCount += sampleCount;
             double[] lastPhases = new double[frequencies.Length];
