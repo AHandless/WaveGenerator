@@ -18,7 +18,7 @@ namespace WaveGenerator
                 uint size = _byteCount+(uint)(this._chunkID.Length + this._chunkDataSize.Length);
                 return size;
             }           
-        }
+        }        
 
         public DataChunk(Stream file, int dataOffset)
             : base("data", 0)
@@ -39,8 +39,7 @@ namespace WaveGenerator
             _file.Position = _dataOffset + _byteCount;
             _file.Write(sample, 0, sample.Length);
             _byteCount += (uint)sample.Length;                
-            _file.Flush();
-       
+            _file.Flush();       
         }
 
         public override byte[] GetChunkBytes()

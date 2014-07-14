@@ -11,11 +11,15 @@ namespace WaveGenerator
         {
             FileStream file = new FileStream("AS.wav", FileMode.Create);
           
-            SoundGenerator sg = new SoundGenerator(7003, BitDepth.Bit32, 1, file);
+            SoundGenerator sg = new SoundGenerator(44100, BitDepth.Bit32, 1, file);
             Random r = new Random();
             double startPhase = 0;
-            for(int i = 0; i<100; i++)
-                startPhase = sg.AddSimpleTone(r.Next(400, 500), r.Next(70, 120), startPhase, 1, false);
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            sg.AddSimpleTone(440, 2000, 0, 0.3, true);
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
+            Console.ReadKey();            
             sg.Save();
             file.Close();         
         }
