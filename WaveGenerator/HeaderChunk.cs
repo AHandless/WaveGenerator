@@ -12,7 +12,7 @@ namespace WaveGenerator
         {
             get
             {
-                return (uint)RIFFType.Length;
+                return (uint)(RIFFType.Length+this._chunkDataSize.Length+this._chunkID.Length);
             }          
         }
 

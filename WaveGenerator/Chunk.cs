@@ -8,6 +8,9 @@ namespace WaveGenerator
     {
         protected byte[] _chunkID;
         protected byte[] _chunkDataSize;
+        /// <summary>
+        /// Chunk's size in bytes
+        /// </summary>
         public abstract uint Size { get; }
 
         protected Chunk(string chunkID, uint chunkDataSize)

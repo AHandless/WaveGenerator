@@ -8,7 +8,7 @@ namespace WaveGenerator
     public class SoundGenerator
     {
         private uint _generatedSampleCount = 0;
-        private DataChunk _data = new DataChunk();
+        private DataChunk _data;
         private HeaderChunk _header;
         private FormatChunk _format;
 
@@ -25,7 +25,12 @@ namespace WaveGenerator
             this._sampleRate = sampleRate;
             this._bitPerSample = (ushort)bitDepth;
             this._channels = channels;
+            
             this._file = file;
+            
+            this._header = new HeaderChunk(0);
+            this._format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
+            this._data = new DataChunk(this._file, (int)(_header.Size+_format.Size));        
         }
 
         public double AddSimpleTone(double frequency, double duration, double startPhase, double aM, bool fade)
@@ -326,7 +331,7 @@ namespace WaveGenerator
             {
                 sbyte signed = Convert.ToSByte(number);
                 byte unsigned = 0;
-                unsigned = (byte)(127 + signed);
+                unsigned = (byte)(128 + signed);
                 result[0] = unsigned;
                 return result;
             }
@@ -337,42 +342,24 @@ namespace WaveGenerator
             return result;
         }
 
-        public void SaveTo(Stream stream)
+        public void Save()
         {
-            _header = new HeaderChunk(0);
-            _format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            uint fileSize = (uint)(_header.Size + _format.Size + _data.Size);
             //Check if there's the pad byte
-            if ((_generatedSampleCount * _channels * (_bitPerSample / 8)) % 2 != 0)
-            {
-                fileSize += 1;
-            }
+            bool padByte = (_generatedSampleCount * _channels * (_bitPerSample / 8)) % 2 != 0;
+            if (padByte)
+                _file.WriteByte(0);
+            _file.Position = 0;            
+            uint fileSize = (uint)((_header.Size-8) + _format.Size + _data.Size);         
+            if (padByte)          
+                fileSize += 1;      
             _header.ChangeSize(BitConverter.GetBytes(fileSize));
             byte[] headerbytes = _header.GetChunkBytes();
             byte[] formatBytes = _format.GetChunkBytes();
-            byte[] dataBytes = _data.GetChunkBytes();
-            stream.Write(headerbytes, 0, headerbytes.Length);
-            stream.Write(formatBytes, 0, formatBytes.Length);
-            stream.Write(dataBytes, 0, dataBytes.Length);           
+            byte[] dataBytes = _data.GetHeaderBytes();
+           _file.Write(headerbytes, 0, headerbytes.Length);
+           _file.Write(formatBytes, 0, formatBytes.Length);
+           _file.Write(dataBytes, 0, dataBytes.Length);          
         }
-
-        private void SaveHeadersToFile(Stream file)
-        {
-            file.Position = 0;
-            _header = new HeaderChunk(0);
-            _format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            uint fileSize = (uint)(_header.Size + _format.Size + 8 + _channels * (_bitPerSample / 8) * _generatedSampleCount);
-            //Check if there's the pad byte
-            if ((_generatedSampleCount * _channels * (_bitPerSample / 8)) % 2 != 0)
-            {
-                fileSize += 1;
-            }
-            _header.ChangeSize(BitConverter.GetBytes(fileSize));
-            byte[] headerbytes = _header.GetChunkBytes();
-            byte[] formatBytes = _format.GetChunkBytes();
-            file.Write(headerbytes, 0, headerbytes.Length);
-            file.Write(formatBytes, 0, formatBytes.Length);
-        }        
     }
     public enum BitDepth : byte
     {
