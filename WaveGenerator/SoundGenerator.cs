@@ -7,7 +7,7 @@ namespace WaveGenerator
 {
     public class SoundGenerator
     {
-        private long _generatedSampleCount = 0;
+        private uint _generatedSampleCount = 0;
         private DataChunk _data = new DataChunk();
         private HeaderChunk _header;
         private FormatChunk _format;
@@ -15,40 +15,42 @@ namespace WaveGenerator
         private uint _sampleRate;
         private ushort _bitPerSample;
         private ushort _channels;
-
-        //private long lastDataChunkPosition = 0;
+       
         Stream _file;
 
-        public SoundGenerator(uint sampleRate, ushort bitPerSample, ushort channels, Stream file)
+        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, Stream file)
         {
+            if (Enum.IsDefined(typeof(BitDepth), bitDepth) == false)
+                throw new ArgumentException("Unsupported bit depth", "bitDepth");
             this._sampleRate = sampleRate;
-            this._bitPerSample = bitPerSample;
+            this._bitPerSample = (ushort)bitDepth;
             this._channels = channels;
             this._file = file;
         }
 
-        //double lastSin = 0d;
-        //bool directionUp = true;
-
-        public double AddSimpleTone(double frequency, double duration, double startPhase, double startJointAmp, double endJointAmp, double aM)
+        public double AddSimpleTone(double frequency, double duration, double startPhase, double aM, bool fade)
         {
             if (duration == 0)
                 return 0;
             double lastPhase = 0;
-            long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
+            uint sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
             this._generatedSampleCount += sampleCount;
             double amplitudeMax = Math.Pow(2, _bitPerSample - 1) - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
 
-            double[] wave = GenerateSineWave(frequency, (int)sampleCount, radPerSample, startPhase, out lastPhase);
-            //Amplitude
-            int end = 0;           
-                Fade(ref wave, aM, endJointAmp, wave.Length - (int)(sampleCount * 0.1d) - 1, wave.Length - 1);
-                Fade(ref wave, startJointAmp, aM, 0, (int)(sampleCount * 0.1d));
-                end = (int)(sampleCount * 0.1d);
-           
-            for (int i = end+1; i < wave.Length-end; i++)
-                wave[i] = wave[i] * aM;         
+            double[] wave = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase, out lastPhase);
+            //Fading            
+            uint end = (uint)(sampleCount * 0.1d);
+            if (fade)
+            {
+                Fade(ref wave, aM, 0, (uint)(wave.Length - end), end);
+                Fade(ref wave, 0, aM, 0, end);
+            }
+            else
+                end = 0;
+            //Set amplitutde level
+            for (uint i = end; i < wave.Length - end; i++)
+                wave[i] = wave[i] * aM;
             for (uint i = 0; i < wave.Length; i++)
             {
                 double sin = amplitudeMax * wave[i];
@@ -58,79 +60,88 @@ namespace WaveGenerator
                     _data.AddSamples(sinBytes);
                 }
             }
-            if (endJointAmp == 0)
+            if (fade)
                 lastPhase = 0;
             return lastPhase;
-        }
+        }          
 
-        private void Fade(ref double[] wave, double startAmplitude, double endAmplitude, int start, int end)
+        private void Fade(ref double[] wave, double startAmplitude, double endAmplitude, uint start, uint length)
         {
-            if (end < start)
-                throw new ArgumentException("The end point can't be less than the start point");
-            if (startAmplitude == endAmplitude || startAmplitude < 0 || endAmplitude < 0)
-                return;
-            double minusAmpMax;
-            int fadeLength = end - start;
+            if (start >= wave.Length ||  length > wave.Length-start)
+                throw new ArgumentException("Start or end index was outside of the wave array for some reason");
+            if (startAmplitude < 0 || endAmplitude < 0)
+                throw new ArgumentException("The amplitude can't be negative");
+            double minusAmpMax = 0;
+         
             if (startAmplitude > endAmplitude)
             {
                 minusAmpMax = startAmplitude - endAmplitude;
-                for (int i = 0; i <= fadeLength; i++)
-                    wave[start + i] = wave[start + i] * (startAmplitude - (minusAmpMax / fadeLength * i));
+                for (int i = 0; i < length; i++)
+                    wave[start + i] = wave[start + i] * (startAmplitude - (minusAmpMax / length * i));
             }
             else
             {
                 minusAmpMax = endAmplitude - startAmplitude;
-                for (int i = 0; i <= fadeLength; i++)
-                    wave[start + i] = wave[start + i] * (startAmplitude + (minusAmpMax / fadeLength * i));
+                for (int i = 0; i < length; i++)
+                    wave[start + i] = wave[start + i] * (startAmplitude + (minusAmpMax / length * i));
             }
-        }         
+        }
 
-        public double[] AddComplexTone(double duration, double[] startPhases, double startJointAmp, double endJointAmp, double aM, params double[] frequencies)
+        public double[] AddComplexTone(double duration, double[] startPhases, double amplitude, bool fade, params double[] frequencies)
         {
-            if (duration == 0)
+            if (duration == 0 || 
+                double.IsInfinity(duration)||
+                double.IsNaN(duration)||
+                amplitude < 0 || 
+                amplitude > 1 ||
+                frequencies == null)
                 return startPhases;
-            long sampleCount = (long)Math.Floor(duration * _sampleRate / 1000d);
+            uint sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
             this._generatedSampleCount += sampleCount;
             double[] lastPhases = new double[frequencies.Length];
-            double amplitude = Math.Pow(2, _bitPerSample - 1) - 1;
+            double fileAmplitude = Math.Pow(2, _bitPerSample - 1) - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
             double[] complexWave = new double[sampleCount];
-            for (int f = 0; f < frequencies.Length; f++)
+            for (int frequencyN = 0; frequencyN < frequencies.Length; frequencyN++)
             {
-                double[] wave = GenerateSineWave(frequencies[f], (int)sampleCount, radPerSample, startPhases[f], out lastPhases[f]);
-                for (int i = 0; i < wave.Length; i++)              
-                    complexWave[i] += wave[i]/frequencies.Length;
-               
+                double[] wave = GenerateSineWave(frequencies[frequencyN], sampleCount, radPerSample, startPhases[frequencyN], out lastPhases[frequencyN]);
+                for (int i = 0; i < wave.Length; i++)
+                    complexWave[i] += wave[i] / frequencies.Length;
             }
-            int end = 0;
-            Fade(ref complexWave, aM, endJointAmp, complexWave.Length - (int)(sampleCount * 0.1d) - 1, complexWave.Length - 1);
-            Fade(ref complexWave, startJointAmp, aM, 0, (int)(sampleCount * 0.1d));
-            end = (int)(sampleCount * 0.1d);
-
-            for (int i = end + 1; i < complexWave.Length - end; i++)
-                complexWave[i] = complexWave[i] * aM;
+            //Fading            
+            uint end = (uint)(sampleCount * 0.1d);
+            if (fade)
+            {
+                Fade(ref complexWave, amplitude, 0, (uint)(complexWave.Length - end), end);
+                Fade(ref complexWave, 0, amplitude, 0, end);
+            }
+            else
+                end = 0;
+            //Set amplitutde level
+            for (uint i = end; i < complexWave.Length - end; i++)
+                complexWave[i] = complexWave[i] * amplitude;
             for (int i = 0; i < complexWave.Length; i++)
             {
                 double sin = complexWave[i];
-                sin = sin * amplitude;
+                sin = sin * fileAmplitude;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
                 for (int channel = 0; channel < _channels; channel++)
                 {
                     _data.AddSamples(sinBytes);
                 }
             }
-            if (endJointAmp == 0)
+            if (fade)
                 for (int i = 0; i < lastPhases.Length; i++)
-                    lastPhases[i] = 0;
+                    lastPhases[i] = 0;            
             return lastPhases;
         }
 
-        private double[] GenerateSineWave(double frequency, int length, double xInc, double startPhase, out double endPhase)
+        private double[] GenerateSineWave(double frequency, uint length, double xInc, double startPhase, out double endPhase)
         {
-            double[] wave = new double[length];
+            double[] wave = new double[length];           
             for (int x = 0; x < length; x++)
                 wave[x] = Math.Sin(frequency * xInc * x + startPhase);
-            endPhase = GetPhase(length * xInc * frequency + startPhase);           
+            endPhase = GetPhase(length * xInc * frequency + startPhase);
             return wave;
         }
 
@@ -342,7 +353,7 @@ namespace WaveGenerator
             byte[] dataBytes = _data.GetChunkBytes();
             stream.Write(headerbytes, 0, headerbytes.Length);
             stream.Write(formatBytes, 0, formatBytes.Length);
-            stream.Write(dataBytes, 0, dataBytes.Length);
+            stream.Write(dataBytes, 0, dataBytes.Length);           
         }
 
         private void SaveHeadersToFile(Stream file)
@@ -361,6 +372,13 @@ namespace WaveGenerator
             byte[] formatBytes = _format.GetChunkBytes();
             file.Write(headerbytes, 0, headerbytes.Length);
             file.Write(formatBytes, 0, formatBytes.Length);
-        }
+        }        
+    }
+    public enum BitDepth : byte
+    {
+        Bit8 = 8,
+        Bit16 = 16,
+        Bit24 = 24,
+        Bit32 = 32
     }
 }
