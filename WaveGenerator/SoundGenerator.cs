@@ -30,17 +30,17 @@ namespace WaveGenerator
             
             this._header = new HeaderChunk(0);
             this._format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            this._data = new DataChunk(this._file, (int)(_header.Size+_format.Size));        
+            this._data = new DataChunk(this._file, _header.Size+_format.Size);        
         }
 
-        public double AddSimpleTone(double frequency, double duration, double startPhase, double aM, bool fade)
+        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, bool fade)
         {
             if (duration == 0)
                 return 0;
             double lastPhase = 0;
             uint sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
             this._generatedSampleCount += sampleCount;
-            double amplitudeMax = Math.Pow(2, _bitPerSample - 1) - 1;
+            double fileAmplitude = Math.Pow(2, _bitPerSample - 1) - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
 
             double[] wave = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase, out lastPhase);
@@ -48,16 +48,16 @@ namespace WaveGenerator
             uint end = (uint)(sampleCount * 0.1d);
             if (fade)
             {
-                Fade(ref wave, aM, 0, (uint)(wave.Length - end), end);
-                Fade(ref wave, 0, aM, 0, end);
+                Fade(ref wave, 0, amplitude, 0, end);
+                Fade(ref wave, amplitude, 0, (uint)(wave.Length - end), end);               
             }
             else
                 end = 0;
             for (uint i = 0; i < wave.Length; i++)
             {               
-                double sin = amplitudeMax * wave[i];
+                double sin = fileAmplitude * wave[i];
                 if (i >= end && i < wave.Length - end)
-                    sin *= aM;
+                    sin *= amplitude;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
                 for (int channel = 0; channel < _channels; channel++)
                 {
@@ -116,8 +116,8 @@ namespace WaveGenerator
             uint end = (uint)(sampleCount * 0.1d);
             if (fade)
             {
-                Fade(ref complexWave, amplitude, 0, (uint)(complexWave.Length - end), end);
                 Fade(ref complexWave, 0, amplitude, 0, end);
+                Fade(ref complexWave, amplitude, 0, (uint)(complexWave.Length - end), end);              
             }
             else
                 end = 0;
@@ -135,7 +135,7 @@ namespace WaveGenerator
             }
             if (fade)
                 for (int i = 0; i < lastPhases.Length; i++)
-                    lastPhases[i] = 0;            
+                    lastPhases[i] = 0;           
             return lastPhases;
         }
 

@@ -20,14 +20,13 @@ namespace WaveGenerator
             }           
         }        
 
-        public DataChunk(Stream file, int dataOffset)
+        public DataChunk(Stream file, uint dataOffset)
             : base("data", 0)
         {
             this._file = file;
-            _file.Position = dataOffset +
-                             this._chunkID.Length +
-                             this._chunkDataSize.Length;
-            _dataOffset = (uint)_file.Position;
+            _dataOffset = (uint)(dataOffset +
+                                 this._chunkID.Length +
+                                 this._chunkDataSize.Length);
         }        
 
         public void AddSamples(byte[] sample)

@@ -33,7 +33,7 @@ namespace WaveGenerator
 
             this._sampleRate = BitConverter.GetBytes(sampleRate);         
 
-            _signigicantBitsPerSample = BitConverter.GetBytes(bitsPerSample);
+            this._signigicantBitsPerSample = BitConverter.GetBytes(bitsPerSample);
           
             ushort BA = (ushort)(bitsPerSample / 8 * channels);
             _blockAlign = BitConverter.GetBytes(BA);      
