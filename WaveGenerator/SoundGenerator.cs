@@ -42,12 +42,15 @@ namespace WaveGenerator
             _data = new DataChunk(_header.Size + _format.Size);            
         }
 
-        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, int sampleIndex, bool fade)
+        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, uint sampleIndex, out uint sampleCount, bool fade)
         {
             if (duration == 0)
+            {
+                sampleCount = 0;
                 return 0;
+            }
             double lastPhase = 0;
-            uint sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
+            sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
             this._generatedSampleCount += sampleCount;
             double fileAmplitude = Math.Pow(2, _bitPerSample - 1) - 1;
             double radPerSample = 2 * Math.PI / _sampleRate;
@@ -72,7 +75,7 @@ namespace WaveGenerator
               
                 for (int channel = 0; channel < _channels; channel++)
                 {
-                    _data.AddSamples(sinBytes, _generatedSampleCount-sampleCount+ts+(sampleIndex*_channels));
+                    _data.AddSamples(sinBytes, ts+(sampleIndex*_channels));
                     ts++;
                 }
             }

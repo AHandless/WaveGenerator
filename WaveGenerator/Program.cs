@@ -9,11 +9,12 @@ namespace WaveGenerator
     {
         static void Main()
         {
-         //  FileStream file = new FileStream(@"e:\Music\portal2_robots_ftw2.wav", FileMode.OpenOrCreate);
-            FileStream file = new FileStream(@"AS.wav", FileMode.OpenOrCreate);
-            SoundGenerator sg = new SoundGenerator(8000, BitDepth.Bit8, 2, file);
-            sg.Load(file);
-            sg.AddSimpleTone(440, 1000, 0, 1, 0,false); 
+          //FileStream file = new FileStream(@"e:\Music\portal2_robots_ftw2.wav", FileMode.OpenOrCreate);
+          FileStream file = new FileStream(@"AS.wav", FileMode.OpenOrCreate);
+            SoundGenerator sg = new SoundGenerator(16000, BitDepth.Bit16, 2, file);
+          uint sampleCount = 0;
+          double startPhase =  sg.AddSimpleTone(440, 753, 0, 1, 0, out sampleCount,false);
+          sg.AddSimpleTone(500, 3000, startPhase, 1, sampleCount, out sampleCount, false); 
             //sg.AddSimpleTone(440, 1000, 0, 1, false);
             //sg.AddSimpleTone(440, 1000, 0, 1, false);
             //sg.AddSimpleTone(440, 1000, 0, 1, false);

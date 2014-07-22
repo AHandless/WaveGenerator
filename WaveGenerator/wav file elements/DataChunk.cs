@@ -42,16 +42,15 @@ namespace WaveGenerator
             if (sample == null || _file == null)
                 return;
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
-                throw new OverflowException("The file is too big");
-            
-            bool isThereATail = (_file.Length - _dataOffset - _byteCount) > 0;          
+                throw new OverflowException("The file is too big");            
+           
+            long tailLength = _file.Length - _dataOffset - _byteCount;
        
             _file.Position = _dataOffset + index*sample.Length;
            
-            if (isThereATail && (_file.Position >= _dataOffset + _byteCount || _file.Position+sample.Length > _dataOffset + _byteCount))
-            {
-                
-                byte[] tail = new byte[_file.Length - _dataOffset - _byteCount];
+            if (tailLength>0 && (_file.Position >= _dataOffset + _byteCount || _file.Position+sample.Length > _dataOffset + _byteCount))
+            {                
+                byte[] tail = new byte[tailLength];
                 _file.Position = _file.Length - tail.Length;
                 _file.Read(tail, 0, tail.Length);
                 _file.Position = _dataOffset + index * sample.Length;
@@ -59,8 +58,7 @@ namespace WaveGenerator
                 long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
                 if (bytesToAdd > 0)
                     _byteCount += (uint)bytesToAdd;
-                _file.Write(tail, 0, tail.Length);
-               
+                _file.Write(tail, 0, tail.Length);               
             }
             else
             {                        
