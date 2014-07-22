@@ -27,35 +27,18 @@ namespace WaveGenerator
             _dataOffset = (uint)(dataOffset +
                                  this._chunkID.Length +
                                  this._chunkDataSize.Length);
-        }
-
-        public DataChunk(uint dataOffset)
-            : base("data", 0)
-        {
-            this._dataOffset = (uint)(dataOffset +
-                                 this._chunkID.Length +
-                                 this._chunkDataSize.Length);
-        }
+        }        
 
         public void AddSamples(byte[] sample)
         {
-            if (sample == null || _file == null)
-                return;
+            if (sample == null)
+                throw new ArgumentNullException("sample", "A sample can't be null");
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
                 throw new OverflowException("The file is too big");
             _file.Position = _dataOffset + _byteCount;
             _file.Write(sample, 0, sample.Length);
             _byteCount += (uint)sample.Length;                
             _file.Flush();       
-        }
-
-        public byte[] GetSample(uint index, BitDepth bd)
-        {
-            byte[] result = null;            
-            result = new byte[(byte)bd/8];
-            _file.Position = _dataOffset + index*((byte)bd/8);
-            _file.Read(result, 0, result.Length);             
-            return result;
         }
 
         public override byte[] GetChunkBytes()
@@ -67,15 +50,9 @@ namespace WaveGenerator
         public byte[] GetHeaderBytes()
         {
             this._chunkDataSize = BitConverter.GetBytes(_byteCount);
-            byte[] result = Chunk.JoinByteArrays(base.GetChunkBytes());
+            byte[] result = Chunk.JoinByteArrays(this._chunkID,
+                                                 this._chunkDataSize);
             return result;
-        }
-
-        public override void LoadChunkBytes(FileStream file, int offSet)
-        {
-            base.LoadChunkBytes(file, offSet);
-            _byteCount = this.ChunkDataSize;
-            _file = file;
         }
     }
 }
