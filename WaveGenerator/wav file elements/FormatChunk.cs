@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 namespace WaveGenerator
 {
@@ -125,7 +126,7 @@ namespace WaveGenerator
             return result;
         }
 
-        public override void LoadChunkBytes(System.IO.FileStream file, int offSet)
+        public override void LoadChunkBytes(Stream file, int offSet)
         {
             base.LoadChunkBytes(file, offSet);
             file.Position = offSet + this._chunkID.Length + this._chunkDataSize.Length;

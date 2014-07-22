@@ -18,19 +18,20 @@ namespace WaveGenerator
        
         Stream _file;
 
-        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, Stream file)
+        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, FileInfo fileInfo)
         {
             if (Enum.IsDefined(typeof(BitDepth), bitDepth) == false)
                 throw new ArgumentException("Unsupported bit depth", "bitDepth");
             this._sampleRate = sampleRate;
             this._bitPerSample = (ushort)bitDepth;
             this._channels = channels;
-            
+
+            FileStream file = new FileStream(fileInfo.FullName, FileMode.Create);
             this._file = file;
             
             this._header = new HeaderChunk(0);
             this._format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            this._data = new DataChunk(this._file, _header.Size+_format.Size);
+            this._data = new DataChunk(this._file, _header.Size+_format.Size, _format);
             if (file.Length != 0)
                 _data.LoadChunkBytes((FileStream)file, (int)(_header.Size + _format.Size));
         }
@@ -39,7 +40,7 @@ namespace WaveGenerator
         {
             _header = new HeaderChunk();
             _format = new FormatChunk();
-            _data = new DataChunk(_header.Size + _format.Size);            
+            _data = new DataChunk(_header.Size + _format.Size, _format);            
         }
 
         public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, uint sampleIndex, out uint sampleCount, bool fade)
@@ -65,7 +66,7 @@ namespace WaveGenerator
             }
             else
                 end = 0;
-            uint ts = 0;
+      
             for (uint i = 0; i < wave.Length; i++)
             {               
                 double sin = fileAmplitude * wave[i];
@@ -73,10 +74,9 @@ namespace WaveGenerator
                     sin *= amplitude;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
               
-                for (int channel = 0; channel < _channels; channel++)
+                for (byte channel = 0; channel < _channels; channel++)
                 {
-                    _data.AddSamples(sinBytes, ts+(sampleIndex*_channels));
-                    ts++;
+                    _data.AddSamples(sinBytes, sampleIndex+i, channel);               
                 }
             }
             if (fade)
@@ -145,7 +145,7 @@ namespace WaveGenerator
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
                 for (int channel = 0; channel < _channels; channel++)
                 {
-                    _data.AddSamples(sinBytes, _generatedSampleCount - sampleCount + i+channel);
+                    _data.AddSamples(sinBytes, 0, 0);
                 }
             }
             if (fade)
@@ -234,7 +234,7 @@ namespace WaveGenerator
         } 
 
         public void Save()
-        {
+        {           
             long fileTailSize = _file.Length - _header.Size - _format.Size - _data.Size;
             ////Check if there's the pad byte
             bool padByte = (_data.Size-8) % 2 != 0;
@@ -251,13 +251,15 @@ namespace WaveGenerator
             byte[] dataBytes = _data.GetHeaderBytes();
            _file.Write(headerbytes, 0, headerbytes.Length);
            _file.Write(formatBytes, 0, formatBytes.Length);
-           _file.Write(dataBytes, 0, dataBytes.Length);          
+           _file.Write(dataBytes, 0, dataBytes.Length);
+           _file.Close();  
         }
 
-        public void Load(FileStream file)
+        public void Load(FileInfo fileInfo)
         {
+            FileStream file = new FileStream(fileInfo.FullName, FileMode.OpenOrCreate);
             _header.LoadChunkBytes(file, 0);
-            _format.LoadChunkBytes(file, (int)_header.Size);
+            _format.LoadChunkBytes(file, (int)_header.Size);       
             _data.LoadChunkBytes(file, (int)(_header.Size+_format.Size));          
             _sampleRate = _format.SampleRate;
             _bitPerSample = (byte)_format.BitDepth;

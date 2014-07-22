@@ -10,6 +10,7 @@ namespace WaveGenerator
         private Stream _file;
         private uint _byteCount = 0;
         private uint _dataOffset = 0;
+        private FormatChunk _format;
 
         public override uint Size
         {
@@ -20,24 +21,26 @@ namespace WaveGenerator
             }           
         }        
 
-        public DataChunk(Stream file, uint dataOffset)
+        public DataChunk(Stream file, uint dataOffset, FormatChunk format)
             : base("data", 0)
         {
+            this._format = format;
             this._file = file;
             _dataOffset = (uint)(dataOffset +
                                  this._chunkID.Length +
                                  this._chunkDataSize.Length);
         }
 
-        public DataChunk(uint dataOffset)
+        public DataChunk(uint dataOffset, FormatChunk format)
             : base("data", 0)
         {
+            this._format = format;
             this._dataOffset = (uint)(dataOffset +
                                  this._chunkID.Length +
                                  this._chunkDataSize.Length);
         }
 
-        public void AddSamples(byte[] sample, long index)
+        public void AddSamples(byte[] sample, long index, byte channel)
         {            
             if (sample == null || _file == null)
                 return;
@@ -46,7 +49,7 @@ namespace WaveGenerator
            
             long tailLength = _file.Length - _dataOffset - _byteCount;
        
-            _file.Position = _dataOffset + index*sample.Length;
+            _file.Position = _dataOffset + index*sample.Length*_format.Channels+sample.Length*channel;
            
             if (tailLength>0 && (_file.Position >= _dataOffset + _byteCount || _file.Position+sample.Length > _dataOffset + _byteCount))
             {                
@@ -92,7 +95,7 @@ namespace WaveGenerator
             return result;
         }
 
-        public override void LoadChunkBytes(FileStream file, int offSet)
+        public override void LoadChunkBytes(Stream file, int offSet)
         {
             base.LoadChunkBytes(file, offSet);
             _byteCount = this.ChunkDataSize;

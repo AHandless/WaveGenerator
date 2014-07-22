@@ -80,7 +80,7 @@ namespace WaveGenerator
                                   this._chunkDataSize);
         }
 
-        virtual public void LoadChunkBytes(FileStream file, int offSet)
+        virtual public void LoadChunkBytes(Stream file, int offSet)
         {
             file.Position = offSet;
             file.Read(this._chunkID, 0, 4);
