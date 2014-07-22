@@ -37,38 +37,15 @@ namespace WaveGenerator
                                  this._chunkDataSize.Length);
         }
 
-        public void AddSamples(byte[] sample, long index)
-        {            
+        public void AddSamples(byte[] sample)
+        {
             if (sample == null || _file == null)
                 return;
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
                 throw new OverflowException("The file is too big");
-            
-            bool isThereATail = (_file.Length - _dataOffset - _byteCount) > 0;          
-       
-            _file.Position = _dataOffset + index*sample.Length;
-           
-            if (isThereATail && (_file.Position >= _dataOffset + _byteCount || _file.Position+sample.Length > _dataOffset + _byteCount))
-            {
-                
-                byte[] tail = new byte[_file.Length - _dataOffset - _byteCount];
-                _file.Position = _file.Length - tail.Length;
-                _file.Read(tail, 0, tail.Length);
-                _file.Position = _dataOffset + index * sample.Length;
-                _file.Write(sample, 0, sample.Length);
-                long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
-                if (bytesToAdd > 0)
-                    _byteCount += (uint)bytesToAdd;
-                _file.Write(tail, 0, tail.Length);
-               
-            }
-            else
-            {                        
-                _file.Write(sample, 0, sample.Length);
-                long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
-                if (bytesToAdd > 0)
-                    _byteCount += (uint)bytesToAdd;
-            }
+            _file.Position = _dataOffset + _byteCount;
+            _file.Write(sample, 0, sample.Length);
+            _byteCount += (uint)sample.Length;                
             _file.Flush();       
         }
 
