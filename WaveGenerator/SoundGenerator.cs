@@ -33,6 +33,13 @@ namespace WaveGenerator
             this._data = new DataChunk(this._file, _header.Size+_format.Size);        
         }
 
+        public SoundGenerator()
+        {
+            _header = new HeaderChunk();
+            _format = new FormatChunk();
+            _data = new DataChunk(_header.Size + _format.Size);
+        }
+
         public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, bool fade)
         {
             if (duration == 0)
@@ -216,7 +223,7 @@ namespace WaveGenerator
                 result[i] = fullNumber[i];
             }
             return result;
-        }
+        } 
 
         public void Save()
         {            
@@ -235,6 +242,18 @@ namespace WaveGenerator
            _file.Write(headerbytes, 0, headerbytes.Length);
            _file.Write(formatBytes, 0, formatBytes.Length);
            _file.Write(dataBytes, 0, dataBytes.Length);          
+        }
+
+        public void Load(FileStream file)
+        {
+            _header.LoadChunkBytes(file, 0);
+            _format.LoadChunkBytes(file, (int)_header.Size);
+            _data.LoadChunkBytes(file, (int)(_header.Size+_format.Size));
+            _generatedSampleCount = (uint)(_data.ChunkDataSize / ((byte)_format.BitDepth / 8)/_format.Channels);
+            _sampleRate = _format.SampleRate;
+            _bitPerSample = (byte)_format.BitDepth;
+            _channels = _format.Channels;
+            _file = file;
         }
     }
 

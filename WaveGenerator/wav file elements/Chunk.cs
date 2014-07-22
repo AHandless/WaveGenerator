@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
 
 namespace WaveGenerator
 {    
@@ -12,6 +13,26 @@ namespace WaveGenerator
         /// Chunk's size in bytes
         /// </summary>
         public abstract uint Size { get; }
+        public string ChunkID
+        {
+            get
+            {
+                if (_chunkID != null)
+                    return Encoding.ASCII.GetString(_chunkID);
+                else
+                    return null;
+            }
+        }
+        public uint ChunkDataSize
+        {
+            get
+            {
+                if (_chunkDataSize != null)
+                    return BitConverter.ToUInt32(_chunkDataSize, 0);
+                else
+                    return 0;
+            }
+        }
 
         protected Chunk(string chunkID, uint chunkDataSize)
         {
@@ -53,6 +74,17 @@ namespace WaveGenerator
             return result;
         }
 
-        abstract public byte[] GetChunkBytes();        
+        virtual public byte[] GetChunkBytes()
+        {
+            return JoinByteArrays(this._chunkID,
+                                  this._chunkDataSize);
+        }
+
+        virtual public void LoadChunkBytes(FileStream file, int offSet)
+        {
+            file.Position = offSet;
+            file.Read(this._chunkID, 0, 4);
+            file.Read(this._chunkDataSize, 0, 4);
+        }
     }
 }
