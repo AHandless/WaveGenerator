@@ -9,13 +9,19 @@ namespace WaveGenerator
     {
         static void Main()
         {
-            FileStream file = new FileStream("AS.wav", FileMode.Create);
-
-            FileStream fi = new FileStream(@"c:\Users\Alexander\Desktop\О. С. П. — Какао_d.wav", FileMode.OpenOrCreate);
-            SoundGenerator sg = new SoundGenerator();
-            sg.Load(fi);
-            sg.AddSimpleTone(800, 3000, 0, 1, false);
+         //  FileStream file = new FileStream(@"e:\Music\portal2_robots_ftw2.wav", FileMode.OpenOrCreate);
+            FileStream file = new FileStream(@"AS.wav", FileMode.OpenOrCreate);
+            SoundGenerator sg = new SoundGenerator(8000, BitDepth.Bit8, 2, file);
+            sg.Load(file);
+            sg.AddSimpleTone(440, 1000, 0, 1, 0,false); 
+            //sg.AddSimpleTone(440, 1000, 0, 1, false);
+            //sg.AddSimpleTone(440, 1000, 0, 1, false);
+            //sg.AddSimpleTone(440, 1000, 0, 1, false);
             sg.Save();
+            file.Close();
+            //sg.AddSimpleTone(500, 1000, 0, 1, false);
+         //   sg.Save();
+        
         }
     }
 }

@@ -30,17 +30,19 @@ namespace WaveGenerator
             
             this._header = new HeaderChunk(0);
             this._format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            this._data = new DataChunk(this._file, _header.Size+_format.Size);        
+            this._data = new DataChunk(this._file, _header.Size+_format.Size);
+            if (file.Length != 0)
+                _data.LoadChunkBytes((FileStream)file, (int)(_header.Size + _format.Size));
         }
 
         public SoundGenerator()
         {
             _header = new HeaderChunk();
             _format = new FormatChunk();
-            _data = new DataChunk(_header.Size + _format.Size);
+            _data = new DataChunk(_header.Size + _format.Size);            
         }
 
-        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, bool fade)
+        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, int sampleIndex, bool fade)
         {
             if (duration == 0)
                 return 0;
@@ -60,15 +62,18 @@ namespace WaveGenerator
             }
             else
                 end = 0;
+            uint ts = 0;
             for (uint i = 0; i < wave.Length; i++)
             {               
                 double sin = fileAmplitude * wave[i];
                 if (i >= end && i < wave.Length - end)
                     sin *= amplitude;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
+              
                 for (int channel = 0; channel < _channels; channel++)
                 {
-                    _data.AddSamples(sinBytes);
+                    _data.AddSamples(sinBytes, _generatedSampleCount-sampleCount+ts+(sampleIndex*_channels));
+                    ts++;
                 }
             }
             if (fade)
@@ -137,7 +142,7 @@ namespace WaveGenerator
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
                 for (int channel = 0; channel < _channels; channel++)
                 {
-                    _data.AddSamples(sinBytes);
+                    _data.AddSamples(sinBytes, _generatedSampleCount - sampleCount + i+channel);
                 }
             }
             if (fade)
@@ -226,13 +231,15 @@ namespace WaveGenerator
         } 
 
         public void Save()
-        {            
-            //Check if there's the pad byte
+        {
+            long fileTailSize = _file.Length - _header.Size - _format.Size - _data.Size;
+            ////Check if there's the pad byte
             bool padByte = (_data.Size-8) % 2 != 0;
             if (padByte)
                 _file.WriteByte(0);
-            _file.Position = 0;            
-            uint fileSize = (uint)((_header.Size-8) + _format.Size + _data.Size);         
+            _file.Position = 0;
+         
+            uint fileSize = (uint)((_header.Size-8) + _format.Size + _data.Size+fileTailSize);         
             if (padByte)          
                 fileSize += 1;      
             _header.ChangeSize(BitConverter.GetBytes(fileSize));
@@ -248,8 +255,7 @@ namespace WaveGenerator
         {
             _header.LoadChunkBytes(file, 0);
             _format.LoadChunkBytes(file, (int)_header.Size);
-            _data.LoadChunkBytes(file, (int)(_header.Size+_format.Size));
-            _generatedSampleCount = (uint)(_data.ChunkDataSize / ((byte)_format.BitDepth / 8)/_format.Channels);
+            _data.LoadChunkBytes(file, (int)(_header.Size+_format.Size));          
             _sampleRate = _format.SampleRate;
             _bitPerSample = (byte)_format.BitDepth;
             _channels = _format.Channels;
