@@ -13,13 +13,20 @@ namespace WaveGenerator
         byte[] _averageBytesPerSecond;
         byte[] _blockAlign;
         byte[] _signigicantBitsPerSample;
-        byte[] _extraFormatBytes;
+        byte[] _extraFormatBytes;        
 
         public override uint Size
         {
             get
             {
-                uint size = BitConverter.ToUInt32(this._chunkDataSize, 0)+(uint)this._chunkID.Length+(uint)this._chunkDataSize.Length;
+                uint size = (uint)(_chunkID.Length+
+                                   _chunkDataSize.Length+
+                                   _compressionCode.Length+
+                                   _numberOfChannels.Length+
+                                   _sampleRate.Length+
+                                   _averageBytesPerSecond.Length+
+                                   _blockAlign.Length+
+                                   _signigicantBitsPerSample.Length);
                 if (_extraFormatBytes != null)
                     size += (uint)_extraFormatBytes.Length;
                 return size;
@@ -86,7 +93,7 @@ namespace WaveGenerator
             }
         }
 
-        public FormatChunk(uint sampleRate, ushort channels, ushort bitsPerSample):base("fmt ", 16)
+        public FormatChunk(uint sampleRate, ushort channels, ushort bitsPerSample, Stream file, uint offset):base("fmt ", 16, offset, file)
         {
             this._compressionCode = BitConverter.GetBytes((ushort)1);          
 
@@ -99,18 +106,18 @@ namespace WaveGenerator
             ushort BA = (ushort)(bitsPerSample / 8 * channels);
             _blockAlign = BitConverter.GetBytes(BA);      
            
-            _averageBytesPerSecond = BitConverter.GetBytes((uint)(sampleRate * BA));       
+            _averageBytesPerSecond = BitConverter.GetBytes((uint)(sampleRate * BA));                 
         }
 
         public FormatChunk()
-            : base("fmt ", 16)
+            : base()
         {
             _compressionCode = new byte[2];
             _numberOfChannels = new byte[2];
             _sampleRate = new byte[4];
             _averageBytesPerSecond = new byte[4];
             _blockAlign = new byte[2];
-            _signigicantBitsPerSample = new byte[2];
+            _signigicantBitsPerSample = new byte[2];          
         }
 
         public override byte[] GetChunkBytes()
@@ -126,7 +133,14 @@ namespace WaveGenerator
             return result;
         }
 
-        public override void LoadChunkBytes(Stream file, int offSet)
+        public void Save()
+        {
+            byte[] chunkBytes = this.GetChunkBytes();
+            _file.Position = _chunkOffset;
+            _file.Write(chunkBytes, 0, chunkBytes.Length);
+        }
+
+        public override void LoadChunkBytes(Stream file, uint offSet)
         {
             base.LoadChunkBytes(file, offSet);
             file.Position = offSet + this._chunkID.Length + this._chunkDataSize.Length;
@@ -137,6 +151,7 @@ namespace WaveGenerator
             file.Read(_averageBytesPerSecond, 0, 4);
             file.Read(_blockAlign, 0, 2);
             file.Read(_signigicantBitsPerSample, 0, 2);
+            this._file = file;
         }
     }
 }

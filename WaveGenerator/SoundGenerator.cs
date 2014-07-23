@@ -8,42 +8,34 @@ namespace WaveGenerator
     public class SoundGenerator
     {
         private uint _generatedSampleCount = 0;
-        private DataChunk _data;
-        private HeaderChunk _header;
-        private FormatChunk _format;
+        private WaveFile _waveFile;
+        
+        public Stream File
+        {
+            get
+            {
+                return _waveFile.File;
+            }
+        }      
 
-        private uint _sampleRate;
-        private ushort _bitPerSample;
-        private ushort _channels;
-       
-        Stream _file;
-
-        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, FileInfo fileInfo)
+        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, Stream file)
         {
             if (Enum.IsDefined(typeof(BitDepth), bitDepth) == false)
                 throw new ArgumentException("Unsupported bit depth", "bitDepth");
-            this._sampleRate = sampleRate;
-            this._bitPerSample = (ushort)bitDepth;
-            this._channels = channels;
-
-            FileStream file = new FileStream(fileInfo.FullName, FileMode.Create);
-            this._file = file;
-            
-            this._header = new HeaderChunk(0);
-            this._format = new FormatChunk(_sampleRate, _channels, _bitPerSample);
-            this._data = new DataChunk(this._file, _header.Size+_format.Size, _format);
-            if (file.Length != 0)
-                _data.LoadChunkBytes((FileStream)file, (int)(_header.Size + _format.Size));
+            _waveFile = new WaveFile(sampleRate, bitDepth, channels, file);                  
         }
-
         public SoundGenerator()
-        {
-            _header = new HeaderChunk();
-            _format = new FormatChunk();
-            _data = new DataChunk(_header.Size + _format.Size, _format);            
+        {            
+            _waveFile = new WaveFile();
         }
 
-        public double AddSimpleTone(double frequency, double duration, double startPhase, double amplitude, uint sampleIndex, out uint sampleCount, bool fade)
+        public double AddSimpleTone(double frequency, 
+                                    double duration, 
+                                    double startPhase, 
+                                    double amplitude, 
+                                    uint sampleIndex, 
+                                    out uint sampleCount, 
+                                    bool fade)
         {
             if (duration == 0)
             {
@@ -51,10 +43,10 @@ namespace WaveGenerator
                 return 0;
             }
             double lastPhase = 0;
-            sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
+            sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
             this._generatedSampleCount += sampleCount;
-            double fileAmplitude = Math.Pow(2, _bitPerSample - 1) - 1;
-            double radPerSample = 2 * Math.PI / _sampleRate;
+            double fileAmplitude = Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1;
+            double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
 
             double[] wave = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase, out lastPhase);
             //Fading            
@@ -62,36 +54,36 @@ namespace WaveGenerator
             if (fade)
             {
                 Fade(ref wave, 0, amplitude, 0, end);
-                Fade(ref wave, amplitude, 0, (uint)(wave.Length - end), end);               
+                Fade(ref wave, amplitude, 0, (uint)(wave.Length - end), end);
             }
             else
                 end = 0;
-      
+
             for (uint i = 0; i < wave.Length; i++)
-            {               
+            {
                 double sin = fileAmplitude * wave[i];
                 if (i >= end && i < wave.Length - end)
                     sin *= amplitude;
-                byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
-              
-                for (byte channel = 0; channel < _channels; channel++)
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
+
+                for (byte channel = 0; channel < _waveFile.Channels; channel++)
                 {
-                    _data.AddSamples(sinBytes, sampleIndex+i, channel);               
+                    _waveFile.AddSample(sinBytes, sampleIndex + i, channel);
                 }
             }
             if (fade)
                 lastPhase = 0;
             return lastPhase;
-        }          
+        }
 
         private void Fade(ref double[] wave, double startAmplitude, double endAmplitude, uint start, uint length)
         {
-            if (start >= wave.Length ||  length > wave.Length-start)
+            if (start >= wave.Length || length > wave.Length - start)
                 throw new ArgumentException("Start or end index was outside of the wave array for some reason");
             if (startAmplitude < 0 || endAmplitude < 0)
                 throw new ArgumentException("The amplitude can't be negative");
             double minusAmpMax = 0;
-         
+
             if (startAmplitude > endAmplitude)
             {
                 minusAmpMax = startAmplitude - endAmplitude;
@@ -106,20 +98,29 @@ namespace WaveGenerator
             }
         }
 
-        public double[] AddComplexTone(double duration, double[] startPhases, double amplitude, bool fade, params double[] frequencies)
+        public double[] AddComplexTone(double duration,
+                                       double[] startPhases,
+                                       double amplitude,
+                                       uint sampleIndex,
+                                       out uint sampleCount,
+                                       bool fade,
+                                       params double[] frequencies)
         {
-            if (duration == 0 || 
-                double.IsInfinity(duration)||
-                double.IsNaN(duration)||
-                amplitude < 0 || 
+            if (duration == 0 ||
+                double.IsInfinity(duration) ||
+                double.IsNaN(duration) ||
+                amplitude < 0 ||
                 amplitude > 1 ||
                 frequencies == null)
+            {
+                sampleCount = 0;
                 return startPhases;
-            uint sampleCount = (uint)Math.Floor(duration * _sampleRate / 1000);
+            }
+            sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
             this._generatedSampleCount += sampleCount;
             double[] lastPhases = new double[frequencies.Length];
-            double fileAmplitude = Math.Pow(2, _bitPerSample - 1) - 1;
-            double radPerSample = 2 * Math.PI / _sampleRate;
+            double fileAmplitude = Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1;
+            double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
             double[] complexWave = new double[sampleCount];
             for (int frequencyN = 0; frequencyN < frequencies.Length; frequencyN++)
             {
@@ -132,7 +133,7 @@ namespace WaveGenerator
             if (fade)
             {
                 Fade(ref complexWave, 0, amplitude, 0, end);
-                Fade(ref complexWave, amplitude, 0, (uint)(complexWave.Length - end), end);              
+                Fade(ref complexWave, amplitude, 0, (uint)(complexWave.Length - end), end);
             }
             else
                 end = 0;
@@ -142,21 +143,21 @@ namespace WaveGenerator
                 if (i >= end && i < complexWave.Length - end)
                     sin *= amplitude;
                 sin = sin * fileAmplitude;
-                byte[] sinBytes = ConvertNumber((long)sin, (byte)_bitPerSample);
-                for (int channel = 0; channel < _channels; channel++)
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
+                for (byte channel = 0; channel < _waveFile.Channels; channel++)
                 {
-                    _data.AddSamples(sinBytes, 0, 0);
+                    _waveFile.AddSample(sinBytes, sampleIndex + i, channel);
                 }
             }
             if (fade)
                 for (int i = 0; i < lastPhases.Length; i++)
-                    lastPhases[i] = 0;           
+                    lastPhases[i] = 0;
             return lastPhases;
         }
 
         private double[] GenerateSineWave(double frequency, uint length, double xInc, double startPhase, out double endPhase)
         {
-            double[] wave = new double[length];           
+            double[] wave = new double[length];
             for (int x = 0; x < length; x++)
                 wave[x] = Math.Sin(frequency * xInc * x + startPhase);
             endPhase = GetPhase(length * xInc * frequency + startPhase);
@@ -210,7 +211,7 @@ namespace WaveGenerator
             else
                 result = -Math.Asin(sint) + Math.PI;
             return result;
-        }        
+        }
 
         private byte[] ConvertNumber(long number, byte bit)
         {
@@ -231,40 +232,16 @@ namespace WaveGenerator
                 result[i] = fullNumber[i];
             }
             return result;
-        } 
-
-        public void Save()
-        {           
-            long fileTailSize = _file.Length - _header.Size - _format.Size - _data.Size;
-            ////Check if there's the pad byte
-            bool padByte = (_data.Size-8) % 2 != 0;
-            if (padByte)
-                _file.WriteByte(0);
-            _file.Position = 0;
-         
-            uint fileSize = (uint)((_header.Size-8) + _format.Size + _data.Size+fileTailSize);         
-            if (padByte)          
-                fileSize += 1;      
-            _header.ChangeSize(BitConverter.GetBytes(fileSize));
-            byte[] headerbytes = _header.GetChunkBytes();
-            byte[] formatBytes = _format.GetChunkBytes();
-            byte[] dataBytes = _data.GetHeaderBytes();
-           _file.Write(headerbytes, 0, headerbytes.Length);
-           _file.Write(formatBytes, 0, formatBytes.Length);
-           _file.Write(dataBytes, 0, dataBytes.Length);
-           _file.Close();  
         }
 
-        public void Load(FileInfo fileInfo)
+        public void Save()
         {
-            FileStream file = new FileStream(fileInfo.FullName, FileMode.OpenOrCreate);
-            _header.LoadChunkBytes(file, 0);
-            _format.LoadChunkBytes(file, (int)_header.Size);       
-            _data.LoadChunkBytes(file, (int)(_header.Size+_format.Size));          
-            _sampleRate = _format.SampleRate;
-            _bitPerSample = (byte)_format.BitDepth;
-            _channels = _format.Channels;
-            _file = file;
+            _waveFile.Save();                   
+        }
+
+        public void Load(string filePath)
+        {
+            _waveFile.Load(filePath);
         }
     }
 

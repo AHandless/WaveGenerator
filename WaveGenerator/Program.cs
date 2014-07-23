@@ -9,24 +9,32 @@ namespace WaveGenerator
     {
         static void Main()
         {
-          //FileStream file = new FileStream(@"e:\Music\portal2_robots_ftw2.wav", FileMode.OpenOrCreate);
-          FileInfo file = new FileInfo(@"test.wav");
-          SoundGenerator sg = new SoundGenerator(8000, BitDepth.Bit16, 1, file);
-          uint sampleCount = 0;
-          uint sampleIndex = 0;
-          double startPhase = 0;
-          Random r = new Random();
-          Stopwatch sw = new Stopwatch();
-          sw.Start();
+           FileStream file = new FileStream(@"test.wav", FileMode.Create);
+         
+          
+          SoundGenerator sg = new SoundGenerator(22050, BitDepth.Bit32, 1, file);
+        
+            uint ff = 0;
+            sg.AddSimpleTone(500, 30000, 0, 1, 0, out ff, false);
+          //sg.Load(file);
+          //uint sampleCount = 0;
+          //sg.AddSimpleTone(500, 1000, 0, 1, 44100*10, out sampleCount, false);
+          //sg.Save();
 
-          for (int i = 0; i < 350; i++)
-          {
-              sampleIndex += sampleCount;
-              startPhase = sg.AddSimpleTone(500, 100, startPhase, 1, sampleIndex, out sampleCount, false);
-          }
-          sg.Save();         
-          Console.WriteLine(sw.Elapsed);
-          Console.ReadKey();
+          //uint sampleCount = 0;
+          //uint sampleIndex = 0;
+          //double[] startPhase = new double[3];
+          //Random r = new Random();
+          //Stopwatch sw = new Stopwatch();
+          //sw.Start();
+
+          //for (int i = 0; i < 350; i++)
+          //{
+          //    sampleIndex += sampleCount;
+          //    startPhase = sg.AddComplexTone(100, startPhase, 1, sampleIndex, out sampleCount, false, 400, 500, 600);
+          //}
+          sg.Save();  
+        //  Console.ReadKey();
            
         
         }

@@ -9,6 +9,8 @@ namespace WaveGenerator
     {
         protected byte[] _chunkID;
         protected byte[] _chunkDataSize;
+        protected uint _chunkOffset;
+        protected Stream _file;
         /// <summary>
         /// Chunk's size in bytes
         /// </summary>
@@ -34,12 +36,20 @@ namespace WaveGenerator
             }
         }
 
-        protected Chunk(string chunkID, uint chunkDataSize)
+        protected Chunk(string chunkID, uint chunkDataSize, uint offset, Stream file)
         {
             if (chunkID == null)
                 throw new ArgumentNullException("chunkID", "Can't create a chunk without an ID");
             this._chunkID = Encoding.ASCII.GetBytes(chunkID);
-            this._chunkDataSize = BitConverter.GetBytes(chunkDataSize);         
+            this._chunkDataSize = BitConverter.GetBytes(chunkDataSize);
+            this._chunkOffset = offset;
+            this._file = file;
+        }
+
+        protected Chunk()
+        {
+            this._chunkID = new byte[4];
+            this._chunkDataSize = new byte[4];       
         }
 
         public void ChangeSize(byte[] newSize)
@@ -80,11 +90,12 @@ namespace WaveGenerator
                                   this._chunkDataSize);
         }
 
-        virtual public void LoadChunkBytes(Stream file, int offSet)
+        virtual public void LoadChunkBytes(Stream file, uint offSet)
         {
             file.Position = offSet;
             file.Read(this._chunkID, 0, 4);
             file.Read(this._chunkDataSize, 0, 4);
+            this._chunkOffset = offSet;
         }
     }
 }

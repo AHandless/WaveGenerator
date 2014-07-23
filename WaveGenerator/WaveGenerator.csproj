@@ -41,13 +41,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="wav file elements\Chunk.cs" />
-    <Compile Include="wav file elements\DataChunk.cs" />
-    <Compile Include="wav file elements\FormatChunk.cs" />
-    <Compile Include="wav file elements\HeaderChunk.cs" />
+    <Compile Include="WaveFile\Chunk.cs" />
+    <Compile Include="WaveFile\DataChunk.cs" />
+    <Compile Include="WaveFile\FormatChunk.cs" />
+    <Compile Include="WaveFile\HeaderChunk.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SoundGenerator.cs" />
+    <Compile Include="WaveFile\WaveFile.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

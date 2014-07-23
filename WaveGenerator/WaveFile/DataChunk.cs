@@ -6,10 +6,11 @@ using System.IO;
 namespace WaveGenerator
 {
     class DataChunk : Chunk
-    {        
-        private Stream _file;
+    {   
         private uint _byteCount = 0;
         private uint _dataOffset = 0;
+        private uint _fileTailSize = 0;
+
         private FormatChunk _format;
 
         public override uint Size
@@ -19,25 +20,34 @@ namespace WaveGenerator
                 uint size = _byteCount+(uint)(this._chunkID.Length + this._chunkDataSize.Length);
                 return size;
             }           
-        }        
-
-        public DataChunk(Stream file, uint dataOffset, FormatChunk format)
-            : base("data", 0)
+        }
+        public uint FileTailSize
         {
-            this._format = format;
-            this._file = file;
-            _dataOffset = (uint)(dataOffset +
-                                 this._chunkID.Length +
-                                 this._chunkDataSize.Length);
+            get
+            {
+                if (_fileTailSize > 0)
+                    return _fileTailSize;
+                else
+                    return 0;
+            }
         }
 
-        public DataChunk(uint dataOffset, FormatChunk format)
-            : base("data", 0)
+        public DataChunk(Stream file, uint dataOffset, FormatChunk format)
+            : base("data", 0, dataOffset, file)
         {
-            this._format = format;
-            this._dataOffset = (uint)(dataOffset +
+            this._format = format;          
+            this._chunkOffset = dataOffset;
+            _dataOffset = (uint)(this._chunkOffset +
                                  this._chunkID.Length +
                                  this._chunkDataSize.Length);
+            this._fileTailSize = (uint)(_file.Length - _dataOffset - _byteCount);
+        }
+
+        public DataChunk(FormatChunk format)
+            : base()
+        {
+            this._format = format;        
+            this._dataOffset = (uint)(this._chunkOffset + this._chunkID.Length +this._chunkDataSize.Length);            
         }
 
         public void AddSamples(byte[] sample, long index, byte channel)
@@ -48,6 +58,7 @@ namespace WaveGenerator
                 throw new OverflowException("The file is too big");            
            
             long tailLength = _file.Length - _dataOffset - _byteCount;
+  
        
             _file.Position = _dataOffset + index*sample.Length*_format.Channels+sample.Length*channel;
            
@@ -87,19 +98,28 @@ namespace WaveGenerator
             byte[] result = Chunk.JoinByteArrays(this.GetHeaderBytes());           
             return result;
         }       
-
-        public byte[] GetHeaderBytes()
+     
+        private byte[] GetHeaderBytes()
         {
             this._chunkDataSize = BitConverter.GetBytes(_byteCount);
             byte[] result = Chunk.JoinByteArrays(base.GetChunkBytes());
             return result;
         }
 
-        public override void LoadChunkBytes(Stream file, int offSet)
+        public override void LoadChunkBytes(Stream file, uint offSet)
         {
             base.LoadChunkBytes(file, offSet);
+            _dataOffset = (uint)(this._chunkOffset + this._chunkID.Length + this._chunkDataSize.Length);
             _byteCount = this.ChunkDataSize;
             _file = file;
+            this._fileTailSize = (uint)(_file.Length - _dataOffset - _byteCount);
+        }
+
+        public void Save()
+        {
+            _file.Position = _chunkOffset;
+            byte[] chunkBytes = this.GetChunkBytes();
+            _file.Write(chunkBytes, 0, chunkBytes.Length);
         }
     }
 }
