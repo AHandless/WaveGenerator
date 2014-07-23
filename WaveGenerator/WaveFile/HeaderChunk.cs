@@ -55,7 +55,7 @@ namespace WaveGenerator
         public void Save()
         {
             _file.Position = 0;
-            uint fileSize = this.Size+_format.Size+_data.Size+_data.FileTailSize-8;
+            uint fileSize = this.Size+_format.Size+_data.Size+_data.FileTailSize-8+_data.PadByte;
             this._chunkDataSize = BitConverter.GetBytes(fileSize);
             byte[] chunkBytes = this.GetChunkBytes();
             _file.Write(chunkBytes, 0, chunkBytes.Length);
