@@ -61,7 +61,7 @@ namespace WaveGenerator
 
             for (uint i = 0; i < wave.Length; i++)
             {
-                double sin = fileAmplitude * wave[i];
+                double sin = fileAmplitude * Math.Sin(frequency * radPerSample * i + startPhase); ;
                 if (i >= end && i < wave.Length - end)
                     sin *= amplitude;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
@@ -215,22 +215,26 @@ namespace WaveGenerator
 
         private byte[] ConvertNumber(long number, byte bit)
         {
-            byte[] fullNumber = BitConverter.GetBytes(number);
-
-            byte[] result = new byte[bit / 8];
+            
             //It bit depth is 8
+            byte[] result = new byte[bit / 8];
             if (bit == 8)
-            {
+            {              
                 sbyte signed = Convert.ToSByte(number);
                 byte unsigned = 0;
                 unsigned = (byte)(128 + signed);
                 result[0] = unsigned;
                 return result;
             }
+            if (bit == 32)
+                return BitConverter.GetBytes((int)number);
+            if(bit == 16)
+                return BitConverter.GetBytes((short)number);            
+            byte[] fullNumber = BitConverter.GetBytes(number);           
             for (int i = 0; i < bit / 8; i++)
             {
                 result[i] = fullNumber[i];
-            }
+            }  
             return result;
         }
 

@@ -76,8 +76,7 @@ namespace WaveGenerator
         {
             _header.Save();
             _format.Save();
-            _data.Save();
-          //  _file.Close();
+            _data.Save();         
         }
     }
 }

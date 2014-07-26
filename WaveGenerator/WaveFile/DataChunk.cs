@@ -72,8 +72,7 @@ namespace WaveGenerator
             _file.Write(sample, 0, sample.Length);
             long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
             if (bytesToAdd > 0)
-                _byteCount += (uint)bytesToAdd;
-           // _file.Flush();
+                _byteCount += (uint)bytesToAdd;         
         }
 
         public byte[] GetSample(uint index, BitDepth bd)
