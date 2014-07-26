@@ -9,11 +9,17 @@ namespace WaveGenerator
     {
         static void Main()
         {
-           //FileStream file = new FileStream(@"test.wav", FileMode.Create);
+           FileStream file = new FileStream(@"test.wav", FileMode.Create);
 
 
-           SoundGenerator sg = new SoundGenerator();
-          sg.Load(@"test2.wav");
+           SoundGenerator sg = new SoundGenerator(44100, BitDepth.Bit32, 2, file);
+            uint ff = 0;
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            sg.AddSimpleTone(400, 60 * 1000, 0, 1, 0, out ff, false);
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
+            Console.ReadKey();
 
 
          // uint ff = 0;

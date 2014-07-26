@@ -66,12 +66,14 @@ namespace WaveGenerator
                 return;
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
                 throw new OverflowException("The file is too big");
-            _file.Position = _dataOffset + index * sample.Length * _format.Channels + sample.Length * channel;
+            long newPosition = _dataOffset + index * sample.Length * _format.Channels + sample.Length * channel;
+            if(newPosition != _file.Position)
+                _file.Position =newPosition;
             _file.Write(sample, 0, sample.Length);
             long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
             if (bytesToAdd > 0)
                 _byteCount += (uint)bytesToAdd;
-            _file.Flush();
+           // _file.Flush();
         }
 
         public byte[] GetSample(uint index, BitDepth bd)
