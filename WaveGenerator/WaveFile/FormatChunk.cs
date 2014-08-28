@@ -5,7 +5,7 @@ using System.IO;
 
 namespace WaveGenerator
 {
-    class FormatChunk:Chunk
+    sealed class FormatChunk:Chunk
     {
         byte[] _compressionCode;
         byte[] _numberOfChannels;
@@ -120,7 +120,7 @@ namespace WaveGenerator
             _signigicantBitsPerSample = new byte[2];          
         }
 
-        public override byte[] GetChunkBytes()
+        protected override byte[] GetChunkBytes()
         {            
             byte[] result = result = Chunk.JoinByteArrays(base.GetChunkBytes(),
                                                           this._compressionCode,

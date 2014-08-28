@@ -67,16 +67,16 @@ namespace WaveGenerator
             _file = file;
         }
 
-        public void AddSample(byte[] sample, long index, byte channel)
+        public void AddSampleToEnd(byte[] sample)
         {
-            _data.AddSamples(sample, index, channel);
+            _data.AddSamplesToEnd(sample);
         }
 
         public void Save()
         {
             _header.Save();
             _format.Save();
-            _data.Save();         
+            _data.Save();
         }
     }
 }

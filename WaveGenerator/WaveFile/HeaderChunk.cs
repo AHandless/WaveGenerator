@@ -5,7 +5,7 @@ using System.IO;
 
 namespace WaveGenerator
 {
-    class HeaderChunk:Chunk
+    sealed class HeaderChunk:Chunk
     {   
         byte[] _RIFFType = Encoding.ASCII.GetBytes("WAVE");       
         FormatChunk _format;
@@ -45,7 +45,7 @@ namespace WaveGenerator
             this._data = data;           
         }
 
-        public override byte[] GetChunkBytes()
+        protected override byte[] GetChunkBytes()
         {
             byte[] result = Chunk.JoinByteArrays(base.GetChunkBytes(),
                                           this._RIFFType);            

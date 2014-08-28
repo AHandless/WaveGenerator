@@ -50,14 +50,7 @@ namespace WaveGenerator
         {
             this._chunkID = new byte[4];
             this._chunkDataSize = new byte[4];       
-        }
-
-        public void ChangeSize(byte[] newSize)
-        {
-            if (newSize == null)
-                _chunkDataSize = BitConverter.GetBytes((uint)0);
-            _chunkDataSize = newSize;
-        }
+        }     
 
         protected static byte[] JoinByteArrays(params Array[] arrays)
         {          
@@ -84,13 +77,13 @@ namespace WaveGenerator
             return result;
         }
 
-        virtual public byte[] GetChunkBytes()
+        protected virtual byte[] GetChunkBytes()
         {
             return JoinByteArrays(this._chunkID,
                                   this._chunkDataSize);
         }
 
-        virtual public void LoadChunkBytes(Stream file, uint offSet)
+        public virtual void LoadChunkBytes(Stream file, uint offSet)
         {
             file.Position = offSet;
             file.Read(this._chunkID, 0, 4);

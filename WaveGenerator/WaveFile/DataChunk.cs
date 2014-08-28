@@ -5,7 +5,7 @@ using System.IO;
 
 namespace WaveGenerator
 {
-    class DataChunk : Chunk
+    sealed class DataChunk : Chunk
     {
         private uint _byteCount = 0;
         private uint _dataOffset = 0;
@@ -60,13 +60,13 @@ namespace WaveGenerator
             this._dataOffset = (uint)(this._chunkOffset + this._chunkID.Length + this._chunkDataSize.Length);
         }
 
-        public void AddSamples(byte[] sample, long index, byte channel)
+        public void AddSamplesToEnd(byte[] sample)
         {
             if (sample == null || _file == null)
                 return;
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
                 throw new OverflowException("The file is too big");
-            long newPosition = _dataOffset + index * sample.Length * _format.Channels + sample.Length * channel;
+            long newPosition = _dataOffset+_byteCount;
             if(newPosition != _file.Position)
                 _file.Position =newPosition;
             _file.Write(sample, 0, sample.Length);
@@ -84,7 +84,7 @@ namespace WaveGenerator
             return result;
         }
 
-        public override byte[] GetChunkBytes()
+        protected override byte[] GetChunkBytes()
         {
             byte[] result = Chunk.JoinByteArrays(this.GetHeaderBytes());
             return result;
