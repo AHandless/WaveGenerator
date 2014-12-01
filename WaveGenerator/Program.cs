@@ -1,5 +1,4 @@
-﻿#if DEBUG
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
@@ -9,14 +8,21 @@ namespace WaveGenerator
     class Program
     {
         static void Main()
-        {          
+        {
             FileStream file = new FileStream(@"test.wav", FileMode.Create);
-            WaveFile wavefile = new WaveFile(10000, BitDepth.Bit16, 1, file);          
-            SoundGenerator sg = new SoundGenerator(wavefile);
-            sg.AddComplexTone(1000, new double[3], 1, false, 400, 500, 600);
-            sg.Save(); 
+            SoundGenerator sg = new SoundGenerator(16000, BitDepth.Bit32, 1, file);         
+            double[] phase = {0,0,0};
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            Random r = new Random();
+            for (int i = 0; i < 300; i++)
+            {
+                phase = sg.AddComplexTone(r.Next(370, 520), phase, 1, true, 400,500,600);
+            }
+            sg.Save();
+            sw.Stop();
+            Console.WriteLine(sw.Elapsed);
             Console.ReadKey();           
         }
     }
 }
-#endif

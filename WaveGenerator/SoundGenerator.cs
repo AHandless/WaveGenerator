@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using System.Linq;
+
 namespace WaveGenerator
 {
     public class SoundGenerator
@@ -18,12 +18,11 @@ namespace WaveGenerator
             }
         }
 
-        public SoundGenerator(WaveFile file)
+        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, Stream file)
         {
-            if (file == null)
-                throw new ArgumentNullException("file");
-            else
-                _waveFile = file;
+            if (Enum.IsDefined(typeof(BitDepth), bitDepth) == false)
+                throw new ArgumentException("Unsupported bit depth", "bitDepth");
+            _waveFile = new WaveFile(sampleRate, bitDepth, channels, file);
         }
         public SoundGenerator()
         {
@@ -38,70 +37,31 @@ namespace WaveGenerator
             this._generatedSampleCount += sampleCount;
             double fileAmplitude = Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1;
             double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
-            uint fadeLen;
-            if(fade)
-                fadeLen = (uint)(sampleCount * 0.10);
-            else
-                fadeLen = 0;
-            var fadeValues = FadeInOut(amplitude, 0, fadeLen, sampleCount);
-            var sines = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase).Select(sine => sine * fileAmplitude).Zip(fadeValues, (sine, fadeValue) => fadeValue == 1d ? sine * amplitude : sine * fadeValue);
-            foreach (var sine in sines)           
-                _waveFile.AddSampleToEnd(ConvertNumber((long)sine, (byte)_waveFile.BitDepth));           
+
+            uint fadeLen = (uint)(sampleCount * 0.10);
+            IEnumerator<double> fadeInAmp = Fade(0, amplitude, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeOutAmp = Fade(amplitude, 0, fadeLen).GetEnumerator();
+            int index = 0;
+
+            foreach (double sample in GenerateSineWave(frequency, sampleCount, radPerSample, startPhase))
+            {
+                double sin = fileAmplitude * amplitude * sample;
+                if (fade && index < fadeLen && fadeInAmp.MoveNext())
+                    sin *= fadeInAmp.Current;
+                if (fade && index >= sampleCount - fadeLen && fadeOutAmp.MoveNext())
+                    sin *= fadeOutAmp.Current;
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
+
+                for (byte channel = 0; channel < _waveFile.Channels; channel++)
+                    _waveFile.AddSampleToEnd(sinBytes);
+
+                index++;
+            }
             double lastPhase = 0;
             if (!fade)
-                lastPhase = GetPhase(radPerSample * sampleCount * frequency + startPhase);       
+                lastPhase = GetPhase(radPerSample * sampleCount * frequency + startPhase);
+            fadeInAmp.Dispose(); fadeOutAmp.Dispose();
             return lastPhase;
-        }
-        public double[] AddComplexTone(double duration, double[] startPhases, double amplitude, bool fade, params double[] frequencies)
-        {
-            if (duration == 0 ||
-                double.IsInfinity(duration) ||
-                double.IsNaN(duration) ||
-                amplitude < 0 ||
-                amplitude > 1 ||
-                frequencies == null)
-            {
-                return startPhases;
-            }
-            uint sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
-            this._generatedSampleCount += sampleCount;
-            double[] lastPhases = new double[frequencies.Length];
-            double fileAmplitude = Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1;
-            double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
-            double[] complexWave = new double[sampleCount];
-
-            IEnumerable<double>[] waves = new IEnumerable<double>[frequencies.Length];
-
-            for (int frequencyN = 0; frequencyN < frequencies.Length; frequencyN++)
-                waves[frequencyN] = GenerateSineWave(frequencies[frequencyN], sampleCount, radPerSample, startPhases[frequencyN]);
-            uint fadeLen;
-            if (fade)
-                fadeLen = (uint)(sampleCount * 0.10);
-            else
-                fadeLen = 0;      
-            var fadeValues = FadeInOut(amplitude, 0, fadeLen, sampleCount);
-            var sines = waves[0];
-            for (int i = 1; i < frequencies.Length; i++)
-                sines = sines.Zip(waves[i], (prev, next) => prev + next);
-            sines = sines.Select(sine => sine / frequencies.Length * fileAmplitude).Zip(fadeValues, (sine, fadeValue) => fadeValue == 1d ? sine * amplitude : sine * fadeValue);
-            foreach (var sine in sines)
-                _waveFile.AddSampleToEnd(ConvertNumber((long)sine, (byte)_waveFile.BitDepth));   
-               
-            if (!fade)
-                for (int i = 0; i < frequencies.Length; i++)       
-                    lastPhases[i] = GetPhase(sampleCount * radPerSample * frequencies[i] + startPhases[i]);        
-            return lastPhases;
-        }
-
-        private IEnumerable<double> FadeInOut(double maxAmplitude, double minAmplitude, uint length, uint sampleCount)
-        {
-            if (length > sampleCount)
-                return null;
-            uint fadeLen = length;          
-            var fadeInAmp = Fade(minAmplitude, maxAmplitude, fadeLen);
-            var fadeOutAmp = Fade(maxAmplitude, minAmplitude, fadeLen);
-            var fadeValues = fadeInAmp.Concat(Enumerable.Repeat<double>(1d, (int)(sampleCount - fadeLen * 2))).Concat(fadeOutAmp);
-            return fadeValues;
         }
 
         private IEnumerable<double> Fade(double startAmplitude, double endAmplitude, uint length)
@@ -122,6 +82,63 @@ namespace WaveGenerator
                 for (int i = 0; i < length; i++)
                     yield return startAmplitude + (minusAmpMax / length * i);
             }
+        }
+
+        public double[] AddComplexTone(double duration, double[] startPhases, double amplitude, bool fade, params double[] frequencies)
+        {
+            if (duration == 0 ||
+                double.IsInfinity(duration) ||
+                double.IsNaN(duration) ||
+                amplitude < 0 ||
+                amplitude > 1 ||
+                frequencies == null)
+            {
+                return startPhases;
+            }
+            uint sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
+            this._generatedSampleCount += sampleCount;
+            double[] lastPhases = new double[frequencies.Length];
+            double fileAmplitude = Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1;
+            double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
+            double[] complexWave = new double[sampleCount];
+
+            IEnumerator<double>[] waves = new IEnumerator<double>[frequencies.Length];
+
+            for (int frequencyN = 0; frequencyN < frequencies.Length; frequencyN++)
+                waves[frequencyN] = GenerateSineWave(frequencies[frequencyN], sampleCount, radPerSample, startPhases[frequencyN]).GetEnumerator();
+            
+            uint index = 0;
+            uint fadeLen = (uint)(sampleCount * 0.10);
+            IEnumerator<double> fadeInAmp = Fade(0, amplitude, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeOutAmp = Fade(amplitude, 0, fadeLen).GetEnumerator();
+
+            while (waves[0].MoveNext())
+            {
+                double sin = waves[0].Current;
+                for (int i = 1; i < frequencies.Length; i++)
+                {
+                    waves[i].MoveNext();
+                    sin += waves[i].Current;
+                }
+                sin /= frequencies.Length;
+                sin *= fileAmplitude * amplitude;
+                if (fade && index < fadeLen && fadeInAmp.MoveNext())
+                    sin *= fadeInAmp.Current;
+                if (fade && index >= sampleCount - fadeLen && fadeOutAmp.MoveNext())
+                    sin *= fadeOutAmp.Current;
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
+
+                for (byte channel = 0; channel < _waveFile.Channels; channel++)
+                    _waveFile.AddSampleToEnd(sinBytes);
+                index++;
+            }
+            if (!fade)
+                for (int i = 0; i < frequencies.Length; i++)
+                {
+                    lastPhases[i] = GetPhase(sampleCount * radPerSample * frequencies[i] + startPhases[i]);
+                    waves[i].Dispose();
+                }
+            return lastPhases;
         }
 
         private IEnumerable<double> GenerateSineWave(double frequency, uint length, double xInc, double startPhase)
@@ -181,6 +198,7 @@ namespace WaveGenerator
 
         private byte[] ConvertNumber(long number, byte bit)
         {
+
             //It bit depth is 8
             byte[] result = new byte[bit / 8];
             if (bit == 8)
@@ -210,7 +228,7 @@ namespace WaveGenerator
 
         public void Load(string filePath)
         {
-            _waveFile.LoadFromFile(filePath);
+            _waveFile.Load(filePath);
         }
     }
 
