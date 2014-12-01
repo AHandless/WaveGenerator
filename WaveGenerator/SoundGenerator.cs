@@ -18,11 +18,12 @@ namespace WaveGenerator
             }
         }
 
-        public SoundGenerator(uint sampleRate, BitDepth bitDepth, ushort channels, Stream file)
+        public SoundGenerator(WaveFile file)
         {
-            if (Enum.IsDefined(typeof(BitDepth), bitDepth) == false)
-                throw new ArgumentException("Unsupported bit depth", "bitDepth");
-            _waveFile = new WaveFile(sampleRate, bitDepth, channels, file);
+            if (file == null)
+                throw new ArgumentNullException("file");
+            else
+                _waveFile = file;
         }
         public SoundGenerator()
         {
@@ -39,8 +40,8 @@ namespace WaveGenerator
             double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
 
             uint fadeLen = (uint)(sampleCount * 0.10);
-            IEnumerator<double> fadeInAmp = Fade(0, amplitude, fadeLen).GetEnumerator();
-            IEnumerator<double> fadeOutAmp = Fade(amplitude, 0, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeInAmp = Fade(0, 1, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeOutAmp = Fade(1, 0, fadeLen).GetEnumerator();
             int index = 0;
 
             foreach (double sample in GenerateSineWave(frequency, sampleCount, radPerSample, startPhase))
@@ -109,8 +110,8 @@ namespace WaveGenerator
             
             uint index = 0;
             uint fadeLen = (uint)(sampleCount * 0.10);
-            IEnumerator<double> fadeInAmp = Fade(0, amplitude, fadeLen).GetEnumerator();
-            IEnumerator<double> fadeOutAmp = Fade(amplitude, 0, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeInAmp = Fade(0, 1, fadeLen).GetEnumerator();
+            IEnumerator<double> fadeOutAmp = Fade(1, 0, fadeLen).GetEnumerator();
 
             while (waves[0].MoveNext())
             {
@@ -143,8 +144,8 @@ namespace WaveGenerator
 
         private IEnumerable<double> GenerateSineWave(double frequency, uint length, double xInc, double startPhase)
         {
-            for (int x = 0; x < length; x++)
-                yield return Math.Sin(frequency * xInc * x + startPhase);
+            for (int x = 0; x < length; x++)              
+                yield return Math.Sin(frequency * xInc * x + startPhase);         
         }
 
         private double[] GenerateSquareWave(double frequency, int length, double xInc, double startPhase, out double endPhase)
@@ -228,7 +229,7 @@ namespace WaveGenerator
 
         public void Load(string filePath)
         {
-            _waveFile.Load(filePath);
+            _waveFile.LoadFromFile(filePath);
         }
     }
 

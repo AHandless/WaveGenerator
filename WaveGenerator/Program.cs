@@ -9,20 +9,25 @@ namespace WaveGenerator
     {
         static void Main()
         {
-            FileStream file = new FileStream(@"test.wav", FileMode.Create);
-            SoundGenerator sg = new SoundGenerator(16000, BitDepth.Bit32, 1, file);         
-            double[] phase = {0,0,0};
             Stopwatch sw = new Stopwatch();
+            FileStream file = new FileStream(@"test.wav", FileMode.Create);
+            WaveFile wavefile = new WaveFile(44100, BitDepth.Bit16, 1, file);
+            SoundGenerator sg = new SoundGenerator(wavefile);
             sw.Start();
-            Random r = new Random();
-            for (int i = 0; i < 300; i++)
-            {
-                phase = sg.AddComplexTone(r.Next(370, 520), phase, 1, true, 400,500,600);
-            }
-            sg.Save();
+            sg.AddComplexTone(duration: 1000 * 60 * 30,
+                              startPhases: new double[3],
+                              amplitude: 0.5,
+                              fade: true,
+                              frequencies: new double[] { 400, 500, 600 });
+            //sg.AddSimpleTone(frequency:  400,
+            //                 duration:   1000 * 60 * 30,
+            //                 startPhase: 0,
+            //                 amplitude:  1,
+            //                 fade:       false);
             sw.Stop();
             Console.WriteLine(sw.Elapsed);
-            Console.ReadKey();           
+            sg.Save();
+            Console.ReadKey();
         }
     }
 }

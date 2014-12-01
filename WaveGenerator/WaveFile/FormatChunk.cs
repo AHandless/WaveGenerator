@@ -13,7 +13,10 @@ namespace WaveGenerator
         byte[] _averageBytesPerSecond;
         byte[] _blockAlign;
         byte[] _signigicantBitsPerSample;
-        byte[] _extraFormatBytes;        
+        byte[] _extraFormatBytes;
+
+        BitDepth _bitDepth;
+        byte _byteDepth;
 
         public override uint Size
         {
@@ -87,11 +90,12 @@ namespace WaveGenerator
             get
             {
                 if (_signigicantBitsPerSample != null)
-                    return (BitDepth)BitConverter.ToUInt16(_signigicantBitsPerSample, 0);
+                   return _bitDepth;
                 else
                     return 0;
             }
         }
+        public byte ByteDepth {get { return _byteDepth; }}
 
         public FormatChunk(uint sampleRate, ushort channels, ushort bitsPerSample, Stream file, uint offset):base("fmt ", 16, offset, file)
         {
@@ -102,6 +106,9 @@ namespace WaveGenerator
             this._sampleRate = BitConverter.GetBytes(sampleRate);         
 
             this._signigicantBitsPerSample = BitConverter.GetBytes(bitsPerSample);
+
+            this._bitDepth = (BitDepth)bitsPerSample;
+            this._byteDepth = (byte)(bitsPerSample / 8);
           
             ushort BA = (ushort)(bitsPerSample / 8 * channels);
             _blockAlign = BitConverter.GetBytes(BA);      
@@ -151,6 +158,8 @@ namespace WaveGenerator
             file.Read(_averageBytesPerSecond, 0, 4);
             file.Read(_blockAlign, 0, 2);
             file.Read(_signigicantBitsPerSample, 0, 2);
+            _bitDepth = (BitDepth)BitConverter.ToInt16(_signigicantBitsPerSample, 0);
+            this._byteDepth = (byte)((byte)_bitDepth / 8);
             this._file = file;
         }
     }
