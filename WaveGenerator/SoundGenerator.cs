@@ -43,8 +43,8 @@ namespace WaveGenerator
                 fadeLen = (uint)(sampleCount * 0.10);
             else
                 fadeLen = 0;
-            var fadeValues = FadeInOut(amplitude, 0, fadeLen, sampleCount);
-            var sines = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase).Select(sine => sine * fileAmplitude).Zip(fadeValues, (sine, fadeValue) => fadeValue == 1d ? sine * amplitude : sine * fadeValue);
+            var sines = GenerateSineWave(frequency, sampleCount, radPerSample, startPhase).Select(sine => sine * amplitude * fileAmplitude);
+            sines = FadeInOut(fadeLen, sampleCount, sines);          
             foreach (var sine in sines)           
                 _waveFile.AddSampleToEnd(ConvertNumber((long)sine, (byte)_waveFile.BitDepth));           
             double lastPhase = 0;
@@ -78,12 +78,12 @@ namespace WaveGenerator
             if (fade)
                 fadeLen = (uint)(sampleCount * 0.10);
             else
-                fadeLen = 0;      
-            var fadeValues = FadeInOut(amplitude, 0, fadeLen, sampleCount);
+                fadeLen = 0;       
             var sines = waves[0];
             for (int i = 1; i < frequencies.Length; i++)
                 sines = sines.Zip(waves[i], (prev, next) => prev + next);
-            sines = sines.Select(sine => sine / frequencies.Length * fileAmplitude).Zip(fadeValues, (sine, fadeValue) => fadeValue == 1d ? sine * amplitude : sine * fadeValue);
+            sines = sines.Select(sine => sine / frequencies.Length * fileAmplitude*amplitude);
+            sines = FadeInOut(fadeLen, sampleCount, sines);
             foreach (var sine in sines)
                 _waveFile.AddSampleToEnd(ConvertNumber((long)sine, (byte)_waveFile.BitDepth));   
                
@@ -93,15 +93,16 @@ namespace WaveGenerator
             return lastPhases;
         }
 
-        private IEnumerable<double> FadeInOut(double maxAmplitude, double minAmplitude, uint length, uint sampleCount)
+        private IEnumerable<double> FadeInOut(uint length, uint sampleCount, IEnumerable<double> wave)
         {
             if (length > sampleCount)
-                return null;
+                return wave;
             uint fadeLen = length;          
-            var fadeInAmp = Fade(minAmplitude, maxAmplitude, fadeLen);
-            var fadeOutAmp = Fade(maxAmplitude, minAmplitude, fadeLen);
-            var fadeValues = fadeInAmp.Concat(Enumerable.Repeat<double>(1d, (int)(sampleCount - fadeLen * 2))).Concat(fadeOutAmp);
-            return fadeValues;
+            var fadeInAmp = Fade(0, 1, fadeLen);
+            var fadeOutAmp = Fade(1, 0, fadeLen);
+            return fadeInAmp.Zip(wave, (sine, fadeValue) => sine * fadeValue).
+                        Concat(wave.Skip((int)fadeLen).Take((int)(sampleCount - fadeLen * 2))).
+                            Concat(wave.Skip((int)(sampleCount - fadeLen)).Zip(fadeOutAmp, (sine, fadeValue) => sine * fadeValue));
         }
 
         private IEnumerable<double> Fade(double startAmplitude, double endAmplitude, uint length)
