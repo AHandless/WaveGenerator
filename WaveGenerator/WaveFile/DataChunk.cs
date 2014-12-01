@@ -66,11 +66,11 @@ namespace WaveGenerator
                 return;
             if (uint.MaxValue - 44 < _byteCount + sample.Length)
                 throw new OverflowException("The file is too big");
-            if (sample.Length != _format.ByteDepth)               
-                throw new FormatException(string.Format("The sample is in a wrong format. For this wave file a sample must be {0} bytes long, provided sample is {1} bytes long.", _format.ByteDepth, sample.Length));           
-            long newPosition = _dataOffset+_byteCount;
-            if(newPosition != _file.Position)
-                _file.Position =newPosition;
+            if (sample.Length != _format.ByteDepth)
+                throw new FormatException(string.Format("The sample is in a wrong format. For this wave file a sample must be {0} bytes long, provided sample is {1} bytes long.", _format.ByteDepth, sample.Length));
+            long newPosition = _dataOffset + _byteCount;
+            if (newPosition != _file.Position)
+                _file.Position = newPosition;
             for(int i = 0; i < _format.Channels; i++)                
                 _file.Write(sample, 0, sample.Length);
             long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
