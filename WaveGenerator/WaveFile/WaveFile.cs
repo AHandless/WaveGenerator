@@ -5,7 +5,7 @@ using System.IO;
 
 namespace WaveGenerator
 {
-    class WaveFile
+    public class WaveFile
     {
         HeaderChunk _header;
         FormatChunk _format;
@@ -40,6 +40,13 @@ namespace WaveGenerator
                 return _file;
             }
         }
+        public uint SampleCount
+        {
+            get
+            {
+                return _data.Size / _format.Channels / _format.ByteDepth;
+            }
+        }
 
         public WaveFile()
         {
@@ -56,11 +63,11 @@ namespace WaveGenerator
             _file = file;
         }
 
-        public void Load(string filePath)
+        public void LoadFromFile(string filePath)
         {
             if (filePath == null)
-                throw new ArgumentNullException("filePath");            
-            FileStream file = new FileStream(filePath, FileMode.Open);           
+                throw new ArgumentNullException("filePath");
+            FileStream file = new FileStream(filePath, FileMode.Open);
             _header.LoadChunkBytes(file, 0);
             _format.LoadChunkBytes(file, _header.Size);
             _data.LoadChunkBytes(file, _header.Size + _format.Size);
@@ -69,7 +76,7 @@ namespace WaveGenerator
 
         public void AddSampleToEnd(byte[] sample)
         {
-            _data.AddSamplesToEnd(sample);
+            _data.AddSampleToEnd(sample);
         }
 
         public void Save()
