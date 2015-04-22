@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaveGenerator", "WaveGenerator\WaveGenerator.csproj", "{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}"
 EndProject
 Global
@@ -9,8 +11,8 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.ActiveCfg = Debug|x86
-		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.Build.0 = Debug|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.ActiveCfg = Release|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.Build.0 = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x86.ActiveCfg = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection

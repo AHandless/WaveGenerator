@@ -71,7 +71,7 @@ namespace WaveGenerator
             long newPosition = _dataOffset + _byteCount;
             if (newPosition != _file.Position)
                 _file.Position = newPosition;
-            for(int i = 0; i < _format.Channels; i++)                
+            //for(int i = 0; i < _format.Channels; i++)                
                 _file.Write(sample, 0, sample.Length);
             long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
             if (bytesToAdd > 0)
