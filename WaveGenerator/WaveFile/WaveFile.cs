@@ -79,6 +79,11 @@ namespace WaveGenerator
             _data.AddSampleToEnd(sample);
         }
 
+        public void AddSample(byte[] sample, int sampleNumber, int channel)
+        {
+            _data.AddSample(sample, sampleNumber, channel);
+        }
+
         public void Save()
         {
             _header.Save();

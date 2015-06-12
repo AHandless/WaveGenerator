@@ -78,6 +78,25 @@ namespace WaveGenerator
                 _byteCount += (uint)bytesToAdd;         
         }
 
+        public void AddSample(byte[] sample, int position, int channel)
+        {
+            if (sample == null || _file == null)
+                return;
+            if (uint.MaxValue - 44 < _byteCount + sample.Length)
+                throw new OverflowException("The file is too big");
+            if (sample.Length != _format.ByteDepth)
+                throw new FormatException(string.Format("The sample is in a wrong format. For this wave file a sample must be {0} bytes long, provided sample is {1} bytes long.", _format.ByteDepth, sample.Length));
+            if (channel >= _format.Channels || channel < 0)
+                throw new ArgumentException("Incorrect channel number", "channel");
+            long newPosition = _dataOffset + position*_format.ByteDepth*_format.Channels+_format.ByteDepth*channel;
+            if (newPosition != _file.Position)
+                _file.Position = newPosition;
+            _file.Write(sample, 0, sample.Length);
+            long bytesToAdd = _file.Position - (_dataOffset + _byteCount);
+            if (bytesToAdd > 0)
+                _byteCount += (uint)bytesToAdd;
+        }
+
         public byte[] GetSample(uint index, BitDepth bd)
         {
             byte[] result = null;
