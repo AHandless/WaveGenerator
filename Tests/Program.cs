@@ -15,6 +15,8 @@ namespace Tests
         static void Main(string[] args)
         {
             Tests.Run(Tests.TestLoran, "Loran test");
+            Tests.Run(Tests.TestRandomChirp, "Random chirp test");
+            Tests.Run(Tests.TestChirp, "Chirp test");
             Console.ReadKey();
         }
     }

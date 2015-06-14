@@ -196,15 +196,44 @@ namespace WaveGenerator
                 yield return Math.Sin(frequency * xInc * x + startPhase);
         }
 
-        private double[] GenerateSquareWave(double frequency, int length, double xInc, double startPhase, out double endPhase)
+        private double[] GenerateSquareWave(double frequency, int length, double xInc, double startPhase)
         {
             double[] squareSineWave = new double[length];
             for (int i = 0; i < squareSineWave.Length; i++)
             {
                 squareSineWave[i] = Math.Sign(Math.Sin(frequency * xInc * i + startPhase));
-            }
-            endPhase = GetPhase(length * xInc * frequency + startPhase);
+            }           
             return squareSineWave;
+        }
+
+        public void AddSineChirp(double frequency1, double frequency2, double duration)
+        {
+            uint sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
+            double fileAmplitude = (Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1) * _soundAmplitude;
+            double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
+            var chirp = GenerateSineChirp(frequency1, frequency2, (int)sampleCount, radPerSample, _lastPhase);
+            foreach(double sample in chirp)
+            {
+                double sin = fileAmplitude * sample;
+                byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
+                for (byte channel = 0; channel < (byte)_waveFile.Channels; channel++)
+                    _waveFile.AddSampleToEnd(sinBytes);
+            }           
+        }
+
+        private IEnumerable<double> GenerateSineChirp(double frequency1, double frequency2, int length, double xInc, double stratPhase)
+        {
+            double[] sineChirp = new double[length];
+            double tn = length * xInc;
+            this._lastPhase = GetPhase(stratPhase+tn * (frequency1 + (frequency2 - frequency1) /2));
+        
+            for (int i = 0; i < sineChirp.Length; i++)
+            {
+                double t = i * xInc;
+                double delta = t/tn;             
+                double phase = t * (frequency1 + (frequency2 - frequency1) * delta / 2);              
+                yield return Math.Sin(phase+stratPhase);               
+            }           
         }
 
         private double[] GenerateSawtoothWave(double frequency, int length, double xInc, double startPhase, out double endPhase)

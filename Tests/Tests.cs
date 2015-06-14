@@ -38,7 +38,7 @@ namespace Tests
             sg.Save();
             file.Close();
             file.Dispose();
-            Console.WriteLine("Done. {0}", testName);
+            Console.WriteLine("Done. {0} Elapsed time: {1}", testName, time.ToString(@"hh\:mm\:ss\.fff"));
         }
 
         public static TimeSpan TestLoran(SoundGenerator sg)
@@ -54,6 +54,35 @@ namespace Tests
                 int d = int.Parse(note[1]);
                 sg.AddSimpleTone(f, d, false);
             }
+            sw.Stop();
+            return sw.Elapsed;
+        }
+
+        public static TimeSpan TestRandomChirp(SoundGenerator sg)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            double f1 = 0;
+            double f2 = 440;
+            Random r = new Random();
+            for (int i = 0; i < 100; i++)
+            {
+                f1 = f2;
+                f2 = r.Next(300, 4000);
+                sg.AddSineChirp(f1, f2, 300);
+            }
+            sg.AddSimpleTone(f2, 2000, false);
+            sw.Stop();
+            return sw.Elapsed;
+        }
+
+        public static TimeSpan TestChirp(SoundGenerator sg)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            sg.AddSimpleTone(440, 2000, false);
+            sg.AddSineChirp(440, 900, 3000);
+            sg.AddSimpleTone(900, 2000, false);
             sw.Stop();
             return sw.Elapsed;
         }
