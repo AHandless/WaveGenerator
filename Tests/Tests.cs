@@ -16,6 +16,7 @@ namespace Tests
             
         }
         public static string TestResultDir { get { return @".\TestResults"; } }
+        public delegate TimeSpan TestMethod(SoundGenerator sg);
         private static Random r = new Random();  
         static Tests()
         {
@@ -24,6 +25,37 @@ namespace Tests
                 dir.Create();
             else
                 dir.GetFiles().Select(file => { file.Delete(); return file; }).ToArray();
+        }
+
+        public static void Run(TestMethod test, string testName)
+        {
+            FileStream file = new FileStream(
+               Path.Combine(TestResultDir, string.Format("{0} {1}.wav", testName, Timestamp)),
+               FileMode.Create);
+            WaveFile wavefile = new WaveFile(44100, BitDepth.Bit24, 1, file);
+            SoundGenerator sg = new SoundGenerator(wavefile);
+            TimeSpan time = test(sg);
+            sg.Save();
+            file.Close();
+            file.Dispose();
+            Console.WriteLine("Done. {0}", testName);
+        }
+
+        public static TimeSpan TestLoran(SoundGenerator sg)
+        {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            string sounds = "1180 128;1180 128;1180 128;1180 128;1180 128;1115 128;1115 128;1180 128;1180 128;1115 128;1180 128;1115 128;1180 128";
+            string[] separate = sounds.Split(';');
+            foreach(string sound in separate)
+            {
+                string[] note = sound.Split(' ');
+                int f = int.Parse(note[0]);
+                int d = int.Parse(note[1]);
+                sg.AddSimpleTone(f, d, false);
+            }
+            sw.Stop();
+            return sw.Elapsed;
         }
 
         public static void TestSimple()

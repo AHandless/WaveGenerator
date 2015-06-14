@@ -14,9 +14,7 @@ namespace Tests
     {
         static void Main(string[] args)
         {
-            Tests.TestSimple();      
-            Tests.TestClicks();
-            Tests.TestComplex();
+            Tests.Run(Tests.TestLoran, "Loran test");
             Console.ReadKey();
         }
     }
