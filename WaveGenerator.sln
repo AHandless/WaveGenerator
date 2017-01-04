@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WaveGenerator", "WaveGenerator\WaveGenerator.csproj", "{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}"
 EndProject
@@ -11,31 +11,41 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
 		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|Mixed Platforms.ActiveCfg = Release|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|Mixed Platforms.Build.0 = Release|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x64.ActiveCfg = Debug|x64
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x64.Build.0 = Debug|x64
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.ActiveCfg = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Debug|x86.Build.0 = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|Any CPU.ActiveCfg = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|Mixed Platforms.ActiveCfg = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|Mixed Platforms.Build.0 = Release|x86
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x64.ActiveCfg = Release|x64
+		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x64.Build.0 = Release|x64
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x86.ActiveCfg = Release|x86
 		{FEDDFDB0-B803-4508-89C6-3CD00B4B4AD0}.Release|x86.Build.0 = Release|x86
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|Mixed Platforms.Build.0 = Release|Any CPU
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|x64.ActiveCfg = Debug|x64
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|x64.Build.0 = Debug|x64
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|Any CPU.Build.0 = Release|Any CPU
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|x64.ActiveCfg = Release|x64
+		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|x64.Build.0 = Release|x64
 		{210725C2-7252-40B6-B683-14E53A5F8C32}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
