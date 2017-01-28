@@ -42,7 +42,7 @@ namespace WaveGenerator
         public SoundGenerator(WaveFile file)
         {
             if (file == null)
-                throw new ArgumentNullException("file");
+                throw new ArgumentNullException(nameof(file));
             else
                 _waveFile = file;
         }
@@ -65,9 +65,9 @@ namespace WaveGenerator
                 return;
             }
             if (duration < 0)
-                throw new ArgumentException("Duration cannot be negative.", "duration");
+                throw new ArgumentException("Duration cannot be negative.", nameof(duration));
             if (frequency < 0)
-                throw new ArgumentException("Frequency cannot be negative.", "frequency");
+                throw new ArgumentException("Frequency cannot be negative.", nameof(frequency));
 
             uint sampleCount = (uint)Math.Floor(duration * _waveFile.SampleRate / 1000);
             double fileAmplitude = (Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1) * _soundAmplitude;
@@ -108,20 +108,10 @@ namespace WaveGenerator
         {
             if (startAmplitude < 0 || endAmplitude < 0)
                 throw new ArgumentException("The amplitude can't be negative");
-            double minusAmpMax = 0;
-
-            if (startAmplitude > endAmplitude)
-            {
-                minusAmpMax = startAmplitude - endAmplitude;
-                for (int i = 0; i < length; i++)
-                    yield return startAmplitude - (minusAmpMax / length * i);
-            }
-            else
-            {
-                minusAmpMax = endAmplitude - startAmplitude;
-                for (int i = 0; i < length; i++)
-                    yield return startAmplitude + (minusAmpMax / length * i);
-            }
+            double difference = Math.Abs(startAmplitude - endAmplitude);
+            double direction = startAmplitude > endAmplitude ? -1 : 1;
+            for (int i = 0; i < length; i++)
+                yield return startAmplitude + direction * (difference / length * i);
         }
         /// <summary>
         /// Generates a complex sine wave at the end of the file by combining two or more simple sine waves
@@ -202,7 +192,7 @@ namespace WaveGenerator
             for (int i = 0; i < squareSineWave.Length; i++)
             {
                 squareSineWave[i] = Math.Sign(Math.Sin(frequency * xInc * i + startPhase));
-            }           
+            }
             return squareSineWave;
         }
 
@@ -212,28 +202,28 @@ namespace WaveGenerator
             double fileAmplitude = (Math.Pow(2, (byte)_waveFile.BitDepth - 1) - 1) * _soundAmplitude;
             double radPerSample = 2 * Math.PI / _waveFile.SampleRate;
             var chirp = GenerateSineChirp(frequency1, frequency2, (int)sampleCount, radPerSample, _lastPhase);
-            foreach(double sample in chirp)
+            foreach (double sample in chirp)
             {
                 double sin = fileAmplitude * sample;
                 byte[] sinBytes = ConvertNumber((long)sin, (byte)_waveFile.BitDepth);
                 for (byte channel = 0; channel < (byte)_waveFile.Channels; channel++)
                     _waveFile.AddSampleToEnd(sinBytes);
-            }           
+            }
         }
 
         private IEnumerable<double> GenerateSineChirp(double frequency1, double frequency2, int length, double xInc, double stratPhase)
         {
             double[] sineChirp = new double[length];
             double tn = length * xInc;
-            this._lastPhase = GetPhase(stratPhase+tn * (frequency1 + (frequency2 - frequency1) /2));
-        
+            this._lastPhase = GetPhase(stratPhase + tn * (frequency1 + (frequency2 - frequency1) / 2));
+
             for (int i = 0; i < sineChirp.Length; i++)
             {
                 double t = i * xInc;
-                double delta = t/tn;             
-                double phase = t * (frequency1 + (frequency2 - frequency1) * delta / 2);              
-                yield return Math.Sin(phase+stratPhase);               
-            }           
+                double delta = t / tn;
+                double phase = t * (frequency1 + (frequency2 - frequency1) * delta / 2);
+                yield return Math.Sin(phase + stratPhase);
+            }
         }
 
         private double[] GenerateSawtoothWave(double frequency, int length, double xInc, double startPhase, out double endPhase)
@@ -301,7 +291,7 @@ namespace WaveGenerator
         public void Save()
         {
             _waveFile.Save();
-        }       
+        }
     }
 
     public enum BitDepth : byte

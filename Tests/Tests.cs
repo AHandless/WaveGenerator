@@ -131,5 +131,21 @@ namespace Tests
             file.Dispose();
             Console.WriteLine("Complex tone generation test.");
         }
+
+
+        public static TimeSpan TestFade(SoundGenerator sg)
+        {
+            Stopwatch sw = new Stopwatch();
+            Random r = new Random();
+            int n = 100;
+            var frequencies = Enumerable.Repeat(1, n).Select(frequency => frequency * r.Next(400, 1000)).ToArray();
+            sw.Start();
+            for (int i = 0; i < n; i++)
+            {
+                sg.AddSimpleTone(frequencies[i], 300, true);
+            }
+            sw.Stop();
+            return sw.Elapsed;
+        }
     }
 }
